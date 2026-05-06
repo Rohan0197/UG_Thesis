@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Retail Intelligence — Business Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --sidebar: #0e1117;
+      --sidebar-border: #1e2530;
+      --bg: #0f1923;
+      --surface: #151f2e;
+      --surface2: #1a2537;
+      --surface3: #202d40;
+      --border: #253040;
+      --border2: #2d3d52;
+      --text: #e8eef5;
+      --text2: #8fa3bc;
+      --text3: #526070;
+      --teal: #00c4a0;
+      --teal-dim: rgba(0, 196, 160, .12);
+      --teal-mid: rgba(0, 196, 160, .25);
+      --amber: #f5a623;
+      --amber-dim: rgba(245, 166, 35, .12);
+      --red: #f04b5a;
+      --red-dim: rgba(240, 75, 90, .12);
+      --blue: #4a9eff;
+      --blue-dim: rgba(74, 158, 255, .12);
+      --purple: #a78bfa;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--sidebar);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--teal);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -.2px;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+      letter-spacing: .04em;
+    }
+
+    .sidebar-section {
+      padding: 18px 10px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text3);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      margin: 1px 4px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 400;
+      transition: all .15s;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border-color: rgba(0, 196, 160, .2);
+      font-weight: 500;
+    }
+
+    .nav-icon {
+      font-size: 15px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-alert {
+      margin-left: auto;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 12px;
+      border-top: 1px solid var(--sidebar-border);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--teal);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    .status-text {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .page {
+      display: none;
+      padding: 28px 28px 40px;
+      animation: fadeIn .2s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -.4px;
+      margin-bottom: 3px;
+    }
+
+    .page-desc {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .page-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .last-updated {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+      background: var(--surface2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── GRID ── */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-31 {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-13 {
+      display: grid;
+      grid-template-columns: 1fr 3fr;
+      gap: 14px;
+    }
+
+    .grid-12 {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 14px;
+    }
+
+    .grid-21 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-211 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+
+    .card-sm {
+      padding: 14px 16px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 2px;
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 14px;
+    }
+
+    .card-action {
+      font-size: 11px;
+      color: var(--teal);
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .kpi-teal::after {
+      background: var(--teal);
+    }
+
+    .kpi-amber::after {
+      background: var(--amber);
+    }
+
+    .kpi-red::after {
+      background: var(--red);
+    }
+
+    .kpi-blue::after {
+      background: var(--blue);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -.5px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .kpi-value span {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text2);
+    }
+
+    .kpi-change {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .kpi-meta {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .up {
+      color: var(--teal)
+    }
+
+    .dn {
+      color: var(--red)
+    }
+
+    .na {
+      color: var(--text3)
+    }
+
+    /* ── ALERT BANNER ── */
+    .alert-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid;
+    }
+
+    .alert-banner.red {
+      background: var(--red-dim);
+      border-color: rgba(240, 75, 90, .3);
+    }
+
+    .alert-banner.amber {
+      background: var(--amber-dim);
+      border-color: rgba(245, 166, 35, .3);
+    }
+
+    .alert-banner.teal {
+      background: var(--teal-dim);
+      border-color: rgba(0, 196, 160, .3);
+    }
+
+    .ab-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .ab-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .ab-title.red {
+      color: #f77;
+    }
+
+    .ab-title.amber {
+      color: #ffc46a;
+    }
+
+    .ab-title.teal {
+      color: var(--teal);
+    }
+
+    .ab-sub {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    .ab-val {
+      margin-left: auto;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .ab-val.red {
+      color: #f77;
+    }
+
+    .ab-val.amber {
+      color: #ffc46a;
+    }
+
+    .ab-val.teal {
+      color: var(--teal);
+    }
+
+    /* ── TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .data-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: var(--surface2);
+    }
+
+    .data-table .em {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .pill-red {
+      background: var(--red-dim);
+      color: #f77;
+      border: 1px solid rgba(240, 75, 90, .3);
+    }
+
+    .pill-amber {
+      background: var(--amber-dim);
+      color: #ffc46a;
+      border: 1px solid rgba(245, 166, 35, .3);
+    }
+
+    .pill-teal {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid rgba(0, 196, 160, .3);
+    }
+
+    .pill-blue {
+      background: var(--blue-dim);
+      color: var(--blue);
+      border: 1px solid rgba(74, 158, 255, .3);
+    }
+
+    .pill-purple {
+      background: rgba(167, 139, 250, .12);
+      color: var(--purple);
+      border: 1px solid rgba(167, 139, 250, .3);
+    }
+
+    /* ── PROGRESS ── */
+    .prog {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .prog-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .prog-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .prog-label {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .prog-val {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── STAT ROW ── */
+    .stat-row {
+      display: flex;
+      gap: 0;
+      border-top: 1px solid var(--border);
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .stat-value {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* ── SEG PILL ── */
+    .seg-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      margin-bottom: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .seg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .seg-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .seg-bar-wrap {
+      width: 80px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .seg-bar {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .seg-pct {
+      font-size: 11px;
+      color: var(--text3);
+      width: 32px;
+      text-align: right;
+    }
+
+    .seg-rev {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      width: 60px;
+      text-align: right;
+    }
+
+    /* ── ACTION CARD ── */
+    .action-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .action-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .action-desc {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.5;
+    }
+
+    .action-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-top: 6px;
+    }
+
+    /* ── INSIGHT CHIP ── */
+    .insight-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .insight {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .insight::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── METRIC NOTE ── */
+    .metric-note {
+      background: var(--amber-dim);
+      border: 1px solid rgba(245, 166, 35, .25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #ffc46a;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .metric-note strong {
+      color: #ffd17a;
+    }
+
+    /* ── SHAP LIST ── */
+    .shap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .shap-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shap-lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      width: 155px;
+      flex-shrink: 0;
+    }
+
+    .shap-track {
+      flex: 1;
+      height: 7px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .shap-bar {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .shap-num {
+      font-size: 11px;
+      color: var(--text3);
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── VALIDATION TABLE ── */
+    .val-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .val-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .val-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+
+    .val-table tr.best td {
+      background: rgba(0, 196, 160, .06);
+      color: var(--text);
+    }
+
+    .good {
+      color: var(--teal);
+      font-weight: 600;
+    }
+
+    .warn {
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    /* ── CANVAS WRAPPERS ── */
+    .chart-wrap {
+      position: relative;
+    }
+
+    /* ── SELECTS ── */
+    .ctrl-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--teal);
+    }
+
+    .ctrl-label {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── Forecast range selector buttons ── */
+    .range-btns { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0 10px; }
+    .range-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      border-radius: 4px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .range-btn:hover  { border-color: var(--teal); color: var(--teal); }
+    .range-btn.active { background: var(--teal); border-color: var(--teal); color: #0d1521; font-weight:600; }
+    .range-btn.reset  { margin-left:auto; }
+    .range-btn.reset:hover { border-color:#f5a623; color:#f5a623; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">📦</div>
+        <div>
+          <div class="brand-name">RetailIQ</div>
+        </div>
+      </div>
+      <div class="brand-sub">BUSINESS INTELLIGENCE PLATFORM</div>
+    </div>
+
+    <div class="sidebar-section">Overview</div>
+    <div class="nav-item active" onclick="nav('exec')">
+      <span class="nav-icon">⬛</span> Executive Summary
+    </div>
+
+    <div class="sidebar-section">Operations</div>
+    <div class="nav-item" onclick="nav('forecast')">
+      <span class="nav-icon">📈</span> Demand Forecast
+    </div>
+    <div class="nav-item" onclick="nav('inventory')">
+      <span class="nav-icon">📦</span> Inventory Intelligence
+      <span class="nav-alert" id="inv-badge">—</span>
+    </div>
+
+    <div class="sidebar-section">Customers</div>
+    <div class="nav-item" onclick="nav('customers')">
+      <span class="nav-icon">👥</span> Customer Intelligence
+    </div>
+
+    <div class="sidebar-section">Model</div>
+    <div class="nav-item" onclick="nav('model')">
+      <span class="nav-icon">🤖</span> Model Validation
+    </div>
+
+    <div class="sidebar-footer">
+      <div><span class="status-dot"></span><span class="status-text">Pipeline: last run Apr 2016</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">M5 Walmart · UCI Online Retail</div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════ PAGES ══════════════════════ -->
+  <main class="main">
+
+    <!-- ████████████████ PAGE 1: EXECUTIVE SUMMARY ████████████████ -->
+    <div class="page active" id="page-exec">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Executive Summary</div>
+          <div class="page-desc">Business health at a glance — revenue, forecast accuracy, customer value and
+            operational alerts</div>
+        </div>
+        <div class="last-updated">📅 Data through May 2016</div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid-4">
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value" id="kpi-total-rev">—</div>
+          <div class="kpi-change up" id="kpi-wow">—</div>
+          <div class="kpi-meta">10 stores · Jan 2011 – May 2016</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Forecast Accuracy</div>
+          <div class="kpi-value"><span id="kpi-r2">—</span><span> R²</span></div>
+          <div class="kpi-change up">● Reliable — act on forecasts</div>
+          <div class="kpi-meta">LightGBM · held-out 2016 test data</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Avg Customer CLV</div>
+          <div class="kpi-value" id="kpi-avg-clv">—</div>
+          <div class="kpi-change na" id="kpi-n-customers">— customers · 12-month projection</div>
+          <div class="kpi-meta" id="kpi-clv-model">— model · UK retail</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="kpi-label">Revenue at Risk</div>
+          <div class="kpi-value" id="kpi-rev-risk">—</div>
+          <div class="kpi-change dn" id="kpi-churn-count">— customers at high churn risk</div>
+          <div class="kpi-meta">Requires immediate retention action</div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:22px">Operational Alerts — Items Needing Action Today</div>
+      <div class="grid-3">
+        <div>
+          <div class="alert-banner red">
+            <div class="ab-icon">🔴</div>
+            <div>
+              <div class="ab-title red">Critical Stock Shortage</div>
+              <div class="ab-sub">Products with ≤ 2 weeks supply remaining</div>
+            </div>
+            <div class="ab-val red" id="ab-inv-crit">—</div>
+          </div>
+          <div class="alert-banner amber">
+            <div class="ab-icon">🟡</div>
+            <div>
+              <div class="ab-title amber">Stock Warning</div>
+              <div class="ab-sub">Products with 3–4 weeks supply — plan reorder</div>
+            </div>
+            <div class="ab-val amber" id="ab-inv-warn">—</div>
+          </div>
+          <div class="alert-banner teal">
+            <div class="ab-icon">🟢</div>
+            <div>
+              <div class="ab-title teal">Safe Coverage</div>
+              <div class="ab-sub">Products with &gt;4 weeks supply on hand</div>
+            </div>
+            <div class="ab-val teal" id="ab-inv-safe">—</div>
+          </div>
+        </div>
+        <div>
+          <div class="alert-banner red">
+            <div class="ab-icon">⚠</div>
+            <div>
+              <div class="ab-title red">High Churn Risk Customers</div>
+              <div class="ab-sub">High/Critical probability of not returning</div>
+            </div>
+            <div class="ab-val red" id="ab-churn-high">—</div>
+          </div>
+          <div class="alert-banner amber">
+            <div class="ab-icon">📉</div>
+            <div>
+              <div class="ab-title amber">At-Risk Segment Revenue</div>
+              <div class="ab-sub">Projected CLV of churn-risk customers</div>
+            </div>
+            <div class="ab-val amber" id="ab-rev-risk">—</div>
+          </div>
+          <div class="alert-banner teal">
+            <div class="ab-icon">🏆</div>
+            <div>
+              <div class="ab-title teal">Champions Segment</div>
+              <div class="ab-sub">Highest RFM score — protect and reward</div>
+            </div>
+            <div class="ab-val teal" id="ab-champions">—</div>
+          </div>
+        </div>
+        <div>
+          <div class="card card-sm" style="height:100%">
+            <div class="card-title">12-Week Revenue Forecast</div>
+            <div class="card-sub">Projected across all 10 stores · all categories</div>
+            <div class="chart-wrap" style="height:150px">
+              <canvas id="execFcChart" role="img" aria-label="12-week forecast revenue bar chart"></canvas>
+            </div>
+            <div class="stat-row">
+              <div class="stat-item">
+                <div class="stat-label">Avg/Week</div>
+                <div class="stat-value" id="exec-avg-wk">—</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Peak Week</div>
+                <div class="stat-value" id="exec-peak-wk">—</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="exec-fc-total">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Revenue Performance — M5 Walmart Dataset · 10 Stores</div>
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">Weekly Revenue — Actual vs Forecast</div>
+          <div class="card-sub">Last 52 weeks actual sales (top 200 modelled products) · 12-week LightGBM forward
+            forecast · shaded band = ±10% forecast range</div>
+          <div class="range-btns">
+            <span style="color:var(--text3);font-size:11px;margin-right:2px">View:</span>
+            <button class="range-btn"        id="rb-4"   onclick="setSalesView(16)">4W</button>
+            <button class="range-btn"        id="rb-13"  onclick="setSalesView(25)">13W</button>
+            <button class="range-btn"        id="rb-26"  onclick="setSalesView(38)">26W</button>
+            <button class="range-btn active" id="rb-all" onclick="setSalesView(0)">All</button>
+            <button class="range-btn reset"  onclick="resetSalesZoom()">&#8635; Reset zoom</button>
+          </div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="salesChart" role="img" aria-label="Weekly revenue trend with 12-week forecast"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Revenue by State</div>
+            <div class="card-sub">Full history · all stores</div>
+            <div class="chart-wrap" style="height:120px">
+              <canvas id="stateChart" role="img" aria-label="Revenue by state donut chart"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#00c4a0;display:inline-block"></span>CA <span
+                  id="leg-ca">—</span>%</span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#4a9eff;display:inline-block"></span>TX <span
+                  id="leg-tx">—</span>%</span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#f5a623;display:inline-block"></span>WI <span
+                  id="leg-wi">—</span>%</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Monthly Growth Rate</div>
+            <div class="card-sub">Month-on-month revenue change %</div>
+            <div class="chart-wrap" style="height:100px">
+              <canvas id="growthSparkChart" role="img" aria-label="Monthly growth sparkline"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 2: DEMAND FORECAST ████████████████ -->
+    <div class="page" id="page-forecast">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Demand Forecast</div>
+          <div class="page-desc">12-week forward predictions by store and category — use these to plan purchasing,
+            staffing and promotions</div>
+        </div>
+        <div class="last-updated" id="fc-last-updated">Model R² = — · Test 2016</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Model Accuracy (R²)</div>
+          <div class="kpi-value" id="fc-kpi-r2">—</div>
+          <div class="kpi-change up">● High confidence — forecasts are actionable</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Products Forecasted</div>
+          <div class="kpi-value">200</div>
+          <div class="kpi-change na">Top 200 by revenue · 10 stores each</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Forecast Horizon</div>
+          <div class="kpi-value">12<span> weeks</span></div>
+          <div class="kpi-change na">Weekly granularity · store + category level</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Strongest Driver</div>
+          <div class="kpi-value" style="font-size:18px" id="fc-top-feature">—</div>
+          <div class="kpi-change na">Last week's sales predicts next week best</div>
+        </div>
+      </div>
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">Store:</span>
+        <select id="fcStore" onchange="updateForecast()"></select>
+        <span class="ctrl-label" style="margin-left:8px">Category:</span>
+        <select id="fcCat" onchange="updateForecast()"></select>
+      </div>
+
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">12-Week Demand Forecast</div>
+          <div class="card-sub">Units per week · ±15% band shown · use peak weeks for stock planning</div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="fcMainChart" role="img"
+              aria-label="12-week demand forecast bar chart with uncertainty bands"></canvas>
+          </div>
+          <div class="stat-row" id="fcStats">
+            <div class="stat-item">
+              <div class="stat-label">Avg Units/Week</div>
+              <div class="stat-value" id="fcAvg">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Peak Week</div>
+              <div class="stat-value" id="fcPeak">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">12-Wk Revenue</div>
+              <div class="stat-value" id="fcRev">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Model MAE</div>
+              <div class="stat-value" id="fcMae">— units</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Top 5 Products — Forecast Revenue</div>
+            <div class="card-sub">Next 12 weeks · all stores · highest projected revenue</div>
+            <div id="topProds" style="margin-top:8px"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Business Implications</div>
+            <div class="card-sub">What to do with these forecasts</div>
+            <div class="insight-row">
+              <div class="insight">Stock peak-week inventory <strong>2 weeks in advance</strong> using peak week
+                forecast as the target</div>
+              <div class="insight">SNAP payment days (1st/15th of month) drive <strong>FOODS demand spikes</strong> —
+                plan promotions accordingly</div>
+              <div class="insight">Q4 uplift visible in all stores — begin <strong>seasonal ordering in
+                  September</strong></div>
+              <div class="insight">80% interval width indicates forecast confidence — <strong>narrow band = high
+                  confidence</strong></div>
+              <div class="insight">California stores account for <span id="insight-ca-pct">—</span>% of revenue —
+                prioritise stock allocation there first</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Revenue Trend — Monthly View</div>
+      <div class="card">
+        <div class="card-title">Monthly Revenue + Month-on-Month Growth</div>
+        <div class="card-sub">Bar = monthly revenue · line = MoM growth % · use this to identify seasonality and growth
+          periods</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="trendChart" role="img" aria-label="Monthly revenue trend with growth rate overlay"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 3: INVENTORY ████████████████ -->
+    <div class="page" id="page-inventory">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Inventory Intelligence</div>
+          <div class="page-desc">Stock coverage analysis — identify what needs immediate reorder vs what is safe</div>
+        </div>
+        <div class="last-updated">⚠ Stock estimated from sales velocity — not live WMS</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-red">
+          <div class="kpi-label">Critical — Reorder Now</div>
+          <div class="kpi-value"><span id="inv-kpi-crit">—</span><span> SKUs</span></div>
+          <div class="kpi-change dn">≤ 2 weeks of stock remaining</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Warning — Plan Reorder</div>
+          <div class="kpi-value"><span id="inv-kpi-warn">—</span><span> SKUs</span></div>
+          <div class="kpi-change na">3–4 weeks of stock remaining</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Safe Coverage</div>
+          <div class="kpi-value"><span id="inv-kpi-safe">—</span><span> SKUs</span></div>
+          <div class="kpi-change up" id="inv-kpi-cov-pct">—% of inventory is safe</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Total SKUs Tracked</div>
+          <div class="kpi-value" id="inv-kpi-total">—</div>
+          <div class="kpi-change na">200 products × 10 stores</div>
+        </div>
+      </div>
+
+      <div class="grid-12">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Stock Coverage Distribution</div>
+            <div class="card-sub">Weeks-to-stockout across all SKUs</div>
+            <div class="chart-wrap" style="height:160px">
+              <canvas id="invDonutChart" role="img" aria-label="Inventory status donut chart"></canvas>
+            </div>
+            <div style="margin-top:14px">
+              <div class="prog-row"><span class="prog-label"><span style="color:#f77">●</span> Critical</span><span
+                  class="prog-val" style="color:#f77" id="inv-prog-crit-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-crit" style="width:0%;background:#f04b5a"></div>
+              </div>
+              <div class="prog-row" style="margin-top:8px"><span class="prog-label"><span style="color:#ffc46a">●</span>
+                  Warning</span><span class="prog-val" style="color:#ffc46a" id="inv-prog-warn-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-warn" style="width:0%;background:#f5a623"></div>
+              </div>
+              <div class="prog-row" style="margin-top:8px"><span class="prog-label"><span
+                    style="color:var(--teal)">●</span> Safe</span><span class="prog-val" style="color:var(--teal)"
+                  id="inv-prog-safe-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-safe" style="width:0%;background:#00c4a0"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Reorder Priority Framework</div>
+            <div class="card-sub">How to act on these numbers</div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f77">🔴 Today — Critical Items</div>
+              <div class="action-desc">Place emergency purchase orders for all critical SKUs. Use the 12-week forecast
+                to size order quantity. Prioritise FOODS category — highest demand velocity.</div>
+              <span class="action-tag" id="action-crit-tag" style="background:var(--red-dim);color:#f77">— items ·
+                immediate</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#ffc46a">🟡 This Week — Warning Items</div>
+              <div class="action-desc">Schedule reorders for warning SKUs within 7 days. Lead time + safety buffer
+                should target 8+ weeks of stock on reorder.</div>
+              <span class="action-tag" id="action-warn-tag" style="background:var(--amber-dim);color:#ffc46a">— items ·
+                plan now</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:var(--teal)">🟢 Monthly — Safe Items</div>
+              <div class="action-desc">Review safe items monthly. Use forecast trends to identify seasonal uplift
+                requirements 6–8 weeks ahead.</div>
+              <span class="action-tag" id="action-safe-tag" style="background:var(--teal-dim);color:var(--teal)">— items
+                · monitor</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Critical Items — Immediate Reorder Required</div>
+          <div class="card-sub">Sorted by weeks-to-stockout ascending · use forecast column to size reorder quantity
+          </div>
+          <table class="data-table" id="invTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Store</th>
+                <th>Weeks Left</th>
+                <th>Avg Wkly Demand</th>
+                <th>12-Wk Forecast</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-label">Stock Coverage by Category and Store</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Coverage by Product Category</div>
+          <div class="card-sub">Average weeks-to-stockout per category</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="catCovChart" role="img" aria-label="Category coverage bar chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Critical Items by Store</div>
+          <div class="card-sub">Number of SKUs at critical stock level per store</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="storeCritChart" role="img" aria-label="Critical items per store bar chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 4: CUSTOMERS ████████████████ -->
+    <div class="page" id="page-customers">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Customer Intelligence</div>
+          <div class="page-desc">RFM segmentation · customer lifetime value · churn risk — UCI Online Retail dataset ·
+            UK e-commerce · <span id="cust-n-total">—</span> customers</div>
+        </div>
+        <div class="last-updated">🟢 UCI Online Retail dataset · separate from M5</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Champions</div>
+          <div class="kpi-value" id="cust-kpi-champ">—</div>
+          <div class="kpi-change up" id="cust-kpi-champ-pct">—% of customers · highest value</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Avg 12-Month CLV</div>
+          <div class="kpi-value" id="cust-kpi-clv">—</div>
+          <div class="kpi-change na" id="cust-clv-model-note">— model</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="kpi-label">High/Critical Churn</div>
+          <div class="kpi-value" id="cust-kpi-churn">—</div>
+          <div class="kpi-change dn" id="cust-kpi-churn-pct">—% of customers at risk</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Revenue at Risk</div>
+          <div class="kpi-value" id="cust-kpi-risk">—</div>
+          <div class="kpi-change dn">Projected CLV of churn-risk customers</div>
+        </div>
+      </div>
+
+      <div class="grid-211">
+        <div class="card">
+          <div class="card-title">CLV vs Churn Risk — Retention Priority Map</div>
+          <div class="card-sub">Top-right = high value + high churn risk → priority retention targets</div>
+          <div
+            style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:10px;line-height:1.6">
+            <strong style="color:var(--text2)">How to use this:</strong> Focus retention budget on customers in the
+            <strong style="color:#f77">top-right quadrant</strong> — they have the highest lifetime value and the
+            highest probability of leaving. Bottom-left customers can be deprioritised.
+          </div>
+          <div class="chart-wrap" style="height:270px">
+            <canvas id="clvChart" role="img"
+              aria-label="CLV vs churn risk scatter plot with customer segments coloured"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Customer Segments</div>
+            <div class="card-sub">RFM scoring · 8 segments</div>
+            <div class="chart-wrap" style="height:140px">
+              <canvas id="segDonut" role="img" aria-label="Customer segment donut chart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Segment Breakdown</div>
+            <div id="segPills" style="margin-top:6px"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Segment Actions</div>
+            <div class="card-sub">What to do per segment</div>
+            <div class="action-card">
+              <div class="action-title" style="color:#00c4a0">Champions (<span id="act-champions">—</span>)</div>
+              <div class="action-desc">Reward with loyalty programme. Ask for referrals. Early product access.</div>
+              <span class="action-tag" style="background:var(--teal-dim);color:var(--teal)">Retain &amp; reward</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f5a623">At Risk (<span id="act-at-risk">—</span>)</div>
+              <div class="action-desc">Send personalised win-back email. Offer discount. Survey for dissatisfaction
+                reason.</div>
+              <span class="action-tag" style="background:var(--amber-dim);color:#ffc46a">Win back</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f77">Lost (<span id="act-lost">—</span>)</div>
+              <div class="action-desc">Low-cost re-engagement campaign. Accept attrition if CAC exceeds projected CLV.
+              </div>
+              <span class="action-tag" style="background:var(--red-dim);color:#f77">Re-engage or accept</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Revenue by Segment</div>
+            <div class="card-sub">Historical revenue contribution</div>
+            <div class="chart-wrap" style="height:120px">
+              <canvas id="segRevChart" role="img" aria-label="Revenue by customer segment bar chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 5: MODEL VALIDATION ████████████████ -->
+    <div class="page" id="page-model">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Model Validation</div>
+          <div class="page-desc">Can you trust the forecasts? Walk-forward validation, SHAP explainability and
+            methodology rationale</div>
+        </div>
+        <div class="last-updated">LightGBM · walk-forward CV · no data leakage</div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-title">Walk-Forward Validation Results</div>
+          <div class="card-sub">Train 2011–2014 → Validation 2015 → Test 2016 · strictly no future data used in training
+          </div>
+          <table class="val-table" style="margin-top:8px">
+            <thead>
+              <tr>
+                <th>Split</th>
+                <th>R²</th>
+                <th>MAE (units)</th>
+                <th>RMSE</th>
+                <th>MAPE *</th>
+              </tr>
+            </thead>
+            <tbody id="valTableBody"></tbody>
+          </table>
+          <div class="metric-note">
+            <strong>* Why is MAPE 37–44%?</strong> MAPE is computed only on weeks with non-zero demand.
+            The dataset contains many low-volume product-store pairs with sporadic demand —
+            these inflate MAPE even when the model is accurate on high-volume items.
+            <strong>R² on held-out 2016 data is the primary quality indicator and means the model explains 91% of demand
+              variance.</strong>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">SHAP Feature Importance</div>
+          <div class="card-sub">Mean absolute SHAP value — what drives each forecast · sampled 5,000 test rows</div>
+          <div class="shap-list" id="shapList"></div>
+          <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#4a9eff;border-radius:2px;display:inline-block"></span>Lag
+              features</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#00c4a0;border-radius:2px;display:inline-block"></span>Rolling
+              stats</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f04b5a;border-radius:2px;display:inline-block"></span>Events</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f5a623;border-radius:2px;display:inline-block"></span>Trend/calendar</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f04b5a;border-radius:2px;display:inline-block"></span>Elasticity</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Model Architecture Decisions</div>
+          <div class="card-sub">Why each choice was made — for stakeholder transparency</div>
+          <div class="insight-row" style="margin-top:8px">
+            <div class="insight"><strong style="color:var(--text)">LightGBM with MAE loss</strong> — Retail demand has
+              extreme outliers (promotions, events). MAE loss is robust to these; MSE would overfit to spikes.</div>
+            <div class="insight"><strong style="color:var(--text)">Walk-forward cross-validation</strong> — No
+              look-ahead bias. Train on past, predict future, exactly as in production deployment.</div>
+            <div class="insight"><strong style="color:var(--text)">Top 200 products only</strong> — Covers ~80%+ of
+              revenue. Training on all 3,000+ products would be intractable and add noise from negligible items.</div>
+            <div class="insight"><strong style="color:var(--text)">Quantile models (α=0.1, 0.9)</strong> — Three models
+              trained: point forecast + 80% prediction interval bounds. This replaces the naive ±MAE band with
+              statistically valid uncertainty.</div>
+            <div class="insight"><strong style="color:var(--text)">lag_52 (annual seasonality)</strong> — Confirmed by
+              SHAP. Walmart retail has strong yearly patterns. Without this, the model underestimates Q4 uplift.</div>
+            <div class="insight"><strong style="color:var(--text)">SNAP days as a binary feature</strong> — Government
+              food stamp payment days cause a measurable spike in FOODS demand. SHAP rank 3 confirms this signal.</div>
+            <div class="insight"><strong style="color:var(--text)">price_vs_median_ratio</strong> — New feature: item
+              price relative to its own 8-week median. Captures relative elasticity not captured by raw price_change.
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Customer Intelligence Methodology</div>
+            <div class="card-sub">How CLV and churn scores are computed</div>
+            <div class="insight-row" style="margin-top:6px">
+              <div class="insight"><strong style="color:var(--text)">RFM Segmentation</strong> — Quintile scoring on
+                Recency, Frequency and Monetary value. 8 rule-based segments derived from score combinations.</div>
+              <div class="insight"><strong style="color:var(--text)">BG/NBD + Gamma-Gamma CLV</strong> — Probabilistic
+                model fitted per customer. Predicts expected purchases and spend in next 12 months accounting for the
+                probability the customer is already "dead" (churned).</div>
+              <div class="insight"><strong style="color:var(--text)">Logistic Regression Churn</strong> — 5-fold
+                cross-validated binary classifier on R, F, M scores. Outputs calibrated probability (0–1), not a
+                heuristic score.</div>
+              <div class="insight"><strong style="color:var(--text)">K-Means Clustering (k=4)</strong> — Validated with
+                elbow method and silhouette score. 4 clusters correspond to High, Mid, Low value and Inactive customer
+                tiers.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Data Sources</div>
+            <div class="card-sub">Two independent datasets combined into one platform</div>
+            <table class="data-table" style="margin-top:6px">
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th>Used for</th>
+                  <th>Scale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="em">M5 Walmart</td>
+                  <td>Demand forecasting · inventory</td>
+                  <td>10 stores · 2011–2016</td>
+                </tr>
+                <tr>
+                  <td class="em">UCI Online Retail</td>
+                  <td>Customer intelligence · CLV</td>
+                  <td><span id="model-n-customers">—</span> customers · UK</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════ SCRIPTS ══════════════════════ -->
+  <script>
+    const DATA = {"total_rev": 191577546.04, "wow": -7.65, "this_week": 306915.29, "last_month_rev": 1247120.34, "ca_pct": 44.9, "tx_pct": 28.8, "wi_pct": 26.4, "fc_total_12w": 3569051.609, "fc_avg_weekly": 297420.9674166667, "fc_peak_week": 3, "weekly_labels": ["25 May '15", "01 Jun '15", "08 Jun '15", "15 Jun '15", "22 Jun '15", "29 Jun '15", "06 Jul '15", "13 Jul '15", "20 Jul '15", "27 Jul '15", "03 Aug '15", "10 Aug '15", "17 Aug '15", "24 Aug '15", "31 Aug '15", "07 Sep '15", "14 Sep '15", "21 Sep '15", "28 Sep '15", "05 Oct '15", "12 Oct '15", "19 Oct '15", "26 Oct '15", "02 Nov '15", "09 Nov '15", "16 Nov '15", "23 Nov '15", "30 Nov '15", "07 Dec '15", "14 Dec '15", "21 Dec '15", "28 Dec '15", "04 Jan '16", "11 Jan '16", "18 Jan '16", "25 Jan '16", "01 Feb '16", "08 Feb '16", "15 Feb '16", "22 Feb '16", "29 Feb '16", "07 Mar '16", "14 Mar '16", "21 Mar '16", "28 Mar '16", "04 Apr '16", "11 Apr '16", "18 Apr '16", "25 Apr '16", "02 May '16", "09 May '16", "16 May '16"], "weekly_values": [245192.86, 271517.18, 265767.93, 252338.89, 234845.51, 269265.17, 289054.75, 282312.99, 255299.49, 259144.81, 292921.11, 272076.82, 252725.42, 236411.33, 255160.69, 281986.18, 276205.25, 269217.66, 274893.43, 294881.56, 285827.65, 264409.15, 261915.58, 277554.08, 273349.15, 259347.77, 244168.5, 270159.85, 259299.44, 271385.7, 229383.96, 275508.57, 293241.52, 292164.2, 271368.45, 270277.4, 307354.38, 315154.09, 304619.05, 271389.89, 297739.36, 294953.69, 287131.11, 286738.16, 289759.91, 314450.19, 299512.14, 288774.29, 289532.64, 318341.96, 332330.45, 306915.29], "fc_all_labels": ["W+1", "W+2", "W+3", "W+4", "W+5", "W+6", "W+7", "W+8", "W+9", "W+10", "W+11", "W+12"], "fc_all_values": [285839.85, 303244.65, 312432.86, 303124.86, 299311.64, 299747.36, 299509.95, 294232.26, 293795.04, 293480.67, 292915.12, 291417.35], "monthly_labels": ["Jun '14", "Jul '14", "Aug '14", "Sep '14", "Oct '14", "Nov '14", "Dec '14", "Jan '15", "Feb '15", "Mar '15", "Apr '15", "May '15", "Jun '15", "Jul '15", "Aug '15", "Sep '15", "Oct '15", "Nov '15", "Dec '15", "Jan '16", "Feb '16", "Mar '16", "Apr '16", "May '16"], "monthly_values": [3.14, 3.229, 3.326, 3.173, 3.352, 3.207, 3.149, 3.289, 3.163, 3.515, 3.416, 3.6, 3.444, 3.671, 3.776, 3.569, 3.84, 3.528, 3.606, 3.817, 3.822, 3.976, 4.068, 3.152], "monthly_growth": [-0.67, 2.85, 2.98, -4.58, 5.64, -4.33, -1.82, 4.45, -3.83, 11.13, -2.82, 5.4, -4.35, 6.59, 2.86, -5.48, 7.61, -8.14, 2.21, 5.87, 0.12, 4.04, 2.3, -22.52], "fc_stores": ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"], "fc_cats": ["FOODS", "HOBBIES", "HOUSEHOLD"], "store_display": {"CA_1": "CA_1 — California Store 1", "CA_2": "CA_2 — California Store 2", "CA_3": "CA_3 — California Store 3", "CA_4": "CA_4 — California Store 4", "TX_1": "TX_1 — Texas Store 1", "TX_2": "TX_2 — Texas Store 2", "TX_3": "TX_3 — Texas Store 3", "WI_1": "WI_1 — Wisconsin Store 1", "WI_2": "WI_2 — Wisconsin Store 2", "WI_3": "WI_3 — Wisconsin Store 3"}, "fc_by_store_cat": {"CA_1": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [7023.9, 7539.3, 7731.5, 7553.1, 7515.3, 7588.5, 7621.6, 7547.2, 7583.9, 7606.2, 7638.7, 7647.4], "rev": 266125.96, "avg_qty": 7549.7, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [277.1, 281.5, 284.5, 283.8, 272.9, 268.2, 264.5, 260.3, 254.7, 250.8, 248.2, 245.7], "rev": 43636.81, "avg_qty": 266.0, "peak_wk": 3, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [807.3, 833.0, 834.9, 822.8, 835.6, 824.4, 820.0, 811.3, 809.8, 806.8, 801.9, 799.7], "rev": 68701.77, "avg_qty": 817.3, "peak_wk": 5, "mae": 8.81}}, "CA_2": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [6058.5, 6484.6, 6626.6, 6529.0, 6513.3, 6567.4, 6602.1, 6554.2, 6604.3, 6612.7, 6625.9, 6624.6], "rev": 224136.65, "avg_qty": 6533.6, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [158.1, 155.8, 155.6, 156.4, 150.5, 145.6, 142.1, 139.9, 136.0, 133.9, 132.2, 130.0], "rev": 20307.81, "avg_qty": 144.7, "peak_wk": 1, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [841.2, 836.9, 852.2, 835.9, 837.9, 830.0, 830.1, 813.4, 809.6, 808.8, 802.4, 795.9], "rev": 73238.67, "avg_qty": 824.5, "peak_wk": 3, "mae": 8.81}}, "CA_3": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [9900.0, 10702.1, 10997.5, 10590.0, 10447.6, 10524.7, 10525.1, 10404.8, 10450.4, 10492.2, 10475.7, 10476.0], "rev": 351786.24, "avg_qty": 10498.8, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [314.8, 321.1, 326.0, 309.5, 307.8, 298.0, 296.7, 290.5, 288.6, 283.3, 277.5, 273.8], "rev": 47210.99, "avg_qty": 299.0, "peak_wk": 3, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [1805.2, 1835.1, 1874.0, 1782.2, 1820.5, 1839.4, 1817.0, 1778.1, 1773.0, 1770.4, 1766.3, 1763.0], "rev": 153224.72, "avg_qty": 1802.0, "peak_wk": 3, "mae": 8.81}}, "CA_4": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [3661.2, 3913.4, 3977.5, 3871.4, 3889.1, 3898.2, 3892.5, 3848.4, 3864.0, 3852.5, 3854.7, 3851.9], "rev": 137681.21, "avg_qty": 3864.6, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [182.1, 179.8, 186.9, 178.9, 173.0, 168.8, 166.8, 161.7, 158.6, 156.6, 153.9, 151.9], "rev": 24325.93, "avg_qty": 168.2, "peak_wk": 3, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [387.4, 391.3, 399.0, 396.6, 381.7, 377.6, 373.5, 367.6, 360.3, 356.1, 353.0, 346.7], "rev": 34059.85, "avg_qty": 374.2, "peak_wk": 3, "mae": 8.81}}, "TX_1": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [6380.9, 6749.2, 6923.0, 6955.8, 6839.5, 6828.2, 6873.5, 6809.8, 6822.4, 6822.6, 6860.8, 6869.9], "rev": 223651.1, "avg_qty": 6811.3, "peak_wk": 4, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [191.4, 186.1, 186.5, 177.9, 176.2, 171.0, 168.9, 165.7, 163.0, 160.3, 157.5, 153.2], "rev": 27425.77, "avg_qty": 171.5, "peak_wk": 1, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [782.8, 820.5, 827.7, 823.6, 828.6, 804.6, 805.9, 792.1, 787.3, 784.6, 783.3, 776.4], "rev": 62308.86, "avg_qty": 801.4, "peak_wk": 5, "mae": 8.81}}, "TX_2": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [7821.9, 8391.1, 8664.5, 8642.9, 8496.6, 8541.6, 8558.1, 8501.1, 8541.7, 8551.8, 8602.2, 8612.7], "rev": 276309.76, "avg_qty": 8493.9, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [323.4, 328.8, 327.0, 322.2, 327.4, 317.2, 315.0, 307.4, 308.1, 303.1, 303.0, 298.9], "rev": 56635.92, "avg_qty": 315.1, "peak_wk": 2, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [800.5, 846.4, 846.5, 850.9, 846.1, 833.8, 825.8, 814.9, 812.0, 804.7, 805.0, 798.7], "rev": 67751.18, "avg_qty": 823.8, "peak_wk": 4, "mae": 8.81}}, "TX_3": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [7587.8, 8123.4, 8322.2, 8325.0, 8198.3, 8240.2, 8293.4, 8190.9, 8226.6, 8255.7, 8291.5, 8288.7], "rev": 277055.19, "avg_qty": 8195.3, "peak_wk": 4, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [434.2, 441.8, 440.6, 428.1, 420.6, 414.9, 405.6, 398.9, 386.7, 383.3, 378.6, 374.8], "rev": 90747.04, "avg_qty": 409.0, "peak_wk": 2, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [856.1, 889.4, 895.9, 890.1, 891.9, 881.5, 868.7, 859.3, 858.1, 856.1, 852.1, 847.6], "rev": 65953.85, "avg_qty": 870.6, "peak_wk": 3, "mae": 8.81}}, "WI_1": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [4919.1, 5219.5, 5370.5, 5336.8, 5256.1, 5313.5, 5328.6, 5266.6, 5278.0, 5291.7, 5298.0, 5305.5], "rev": 184259.05, "avg_qty": 5265.3, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [164.7, 166.1, 167.7, 164.3, 164.8, 162.3, 161.4, 157.0, 156.4, 154.0, 152.1, 150.3], "rev": 21539.07, "avg_qty": 160.1, "peak_wk": 3, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [364.4, 386.7, 390.6, 385.1, 379.6, 371.0, 368.0, 357.0, 353.8, 350.3, 345.3, 340.1], "rev": 29511.96, "avg_qty": 366.0, "peak_wk": 3, "mae": 8.81}}, "WI_2": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [8260.7, 9106.1, 9697.7, 9544.1, 9230.3, 9370.3, 9489.5, 9263.7, 9261.2, 9303.4, 9353.5, 9335.4], "rev": 340620.5, "avg_qty": 9268.0, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [156.8, 166.1, 168.2, 164.1, 165.8, 162.0, 160.6, 155.7, 153.9, 151.3, 149.9, 147.5], "rev": 26190.64, "avg_qty": 158.5, "peak_wk": 3, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [778.9, 864.1, 868.4, 857.1, 871.7, 862.6, 843.5, 835.4, 832.5, 829.5, 830.6, 829.8], "rev": 57631.69, "avg_qty": 842.0, "peak_wk": 5, "mae": 8.81}}, "WI_3": {"FOODS": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [7093.1, 7921.7, 8406.0, 8217.9, 7945.4, 8108.7, 8139.5, 8014.8, 8048.7, 8084.1, 8120.3, 8094.5], "rev": 257997.06, "avg_qty": 8016.2, "peak_wk": 3, "mae": 8.81}, "HOBBIES": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [123.0, 125.4, 125.2, 119.4, 115.7, 115.1, 112.7, 110.7, 108.5, 106.5, 104.6, 102.6], "rev": 15549.62, "avg_qty": 114.1, "peak_wk": 2, "mae": 8.81}, "HOUSEHOLD": {"labels": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "qty": [529.9, 579.6, 577.6, 576.9, 574.4, 572.3, 561.3, 546.7, 550.8, 546.7, 545.8, 539.5], "rev": 43476.73, "avg_qty": 558.5, "peak_wk": 2, "mae": 8.81}}}, "top5": [{"name": "Foods · Item 120", "cat": "FOODS", "rev": 106628.27}, {"name": "Hobbies · Item 354", "cat": "HOBBIES", "rev": 103890.28}, {"name": "Foods · Item 444", "cat": "FOODS", "rev": 83555.71}, {"name": "Hobbies · Item 158", "cat": "HOBBIES", "rev": 79655.57}, {"name": "Foods · Item 096", "cat": "FOODS", "rev": 67957.26}], "model_metrics": {"test": {"r2": 0.9113, "mae": 8.81, "rmse": 18.13, "mape": 38.0}, "val": {"r2": 0.8955, "mae": 8.94, "rmse": 19.89, "mape": 45.2}}, "shap_data": [{"feature": "lag_1", "value": 16.4742}, {"feature": "rolling_mean_4", "value": 14.7088}, {"feature": "rolling_mean_8", "value": 1.3999}, {"feature": "snap_days", "value": 1.3926}, {"feature": "lag_4", "value": 1.3298}, {"feature": "rolling_mean_12", "value": 0.8948}, {"feature": "lag_52", "value": 0.8223}, {"feature": "lag_2", "value": 0.7167}, {"feature": "rolling_std_4", "value": 0.6164}, {"feature": "lag_3", "value": 0.5883}], "inv_crit": 315, "inv_warn": 531, "inv_safe": 1103, "inv_total": 1949, "inv_cov": 56.6, "inv_cat_labels": ["HOBBIES", "HOUSEHOLD", "FOODS"], "inv_cat_values": [4.53, 4.51, 4.48], "inv_store_labels": ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"], "inv_store_values": [39, 27, 40, 22, 38, 26, 32, 23, 30, 38], "inv_table": [{"rank": 1, "product": "Foods · Item 702", "cat": "FOODS", "store": "CA_1", "weeks": 1.0, "demand": 91.8, "fc12": 1102, "price": 2.98, "priority": "CRITICAL"}, {"rank": 2, "product": "Hobbies · Item 345", "cat": "HOBBIES", "store": "TX_1", "weeks": 1.0, "demand": 4.7, "fc12": 56, "price": 7.78, "priority": "CRITICAL"}, {"rank": 3, "product": "Foods · Item 129", "cat": "FOODS", "store": "CA_3", "weeks": 1.0, "demand": 11.3, "fc12": 136, "price": 6.47, "priority": "CRITICAL"}, {"rank": 4, "product": "Household · Item 537", "cat": "HOUSEHOLD", "store": "CA_3", "weeks": 1.0, "demand": 14.4, "fc12": 173, "price": 15.97, "priority": "CRITICAL"}, {"rank": 5, "product": "Foods · Item 444", "cat": "FOODS", "store": "CA_2", "weeks": 1.0, "demand": 21.8, "fc12": 262, "price": 6.48, "priority": "CRITICAL"}, {"rank": 6, "product": "Foods · Item 164", "cat": "FOODS", "store": "WI_2", "weeks": 1.0, "demand": 66.1, "fc12": 793, "price": 2.98, "priority": "CRITICAL"}, {"rank": 7, "product": "Household · Item 514", "cat": "HOUSEHOLD", "store": "CA_3", "weeks": 1.0, "demand": 91.7, "fc12": 1100, "price": 3.5, "priority": "CRITICAL"}, {"rank": 8, "product": "Hobbies · Item 134", "cat": "HOBBIES", "store": "CA_3", "weeks": 1.0, "demand": 25.4, "fc12": 305, "price": 3.87, "priority": "CRITICAL"}, {"rank": 9, "product": "Foods · Item 607", "cat": "FOODS", "store": "CA_2", "weeks": 1.1, "demand": 53.2, "fc12": 638, "price": 2.28, "priority": "WARNING"}, {"rank": 10, "product": "Foods · Item 164", "cat": "FOODS", "store": "TX_2", "weeks": 1.1, "demand": 13.0, "fc12": 156, "price": 2.98, "priority": "WARNING"}, {"rank": 11, "product": "Foods · Item 019", "cat": "FOODS", "store": "WI_2", "weeks": 1.1, "demand": 6.4, "fc12": 77, "price": 3.28, "priority": "WARNING"}, {"rank": 12, "product": "Hobbies · Item 236", "cat": "HOBBIES", "store": "CA_1", "weeks": 1.1, "demand": 1.2, "fc12": 14, "price": 11.88, "priority": "WARNING"}, {"rank": 13, "product": "Foods · Item 194", "cat": "FOODS", "store": "TX_1", "weeks": 1.1, "demand": 14.0, "fc12": 168, "price": 6.98, "priority": "WARNING"}, {"rank": 14, "product": "Household · Item 373", "cat": "HOUSEHOLD", "store": "WI_3", "weeks": 1.1, "demand": 7.7, "fc12": 92, "price": 3.42, "priority": "WARNING"}, {"rank": 15, "product": "Foods · Item 131", "cat": "FOODS", "store": "CA_2", "weeks": 1.1, "demand": 19.4, "fc12": 233, "price": 5.98, "priority": "WARNING"}, {"rank": 16, "product": "Household · Item 413", "cat": "HOUSEHOLD", "store": "CA_4", "weeks": 1.1, "demand": 5.3, "fc12": 64, "price": 17.97, "priority": "WARNING"}, {"rank": 17, "product": "Hobbies · Item 345", "cat": "HOBBIES", "store": "CA_3", "weeks": 1.1, "demand": 5.3, "fc12": 64, "price": 7.78, "priority": "WARNING"}, {"rank": 18, "product": "Foods · Item 634", "cat": "FOODS", "store": "TX_2", "weeks": 1.1, "demand": 21.2, "fc12": 254, "price": 3.98, "priority": "WARNING"}, {"rank": 19, "product": "Foods · Item 380", "cat": "FOODS", "store": "WI_1", "weeks": 1.1, "demand": 29.8, "fc12": 358, "price": 4.97, "priority": "WARNING"}, {"rank": 20, "product": "Foods · Item 083", "cat": "FOODS", "store": "TX_3", "weeks": 1.1, "demand": 5.9, "fc12": 71, "price": 18.98, "priority": "WARNING"}], "n_customers": 5878, "avg_clv": 2702.21, "n_churn_high": 3005, "rev_at_risk": 7675558.3, "n_champions": 1300, "clv_model_used": "BG/NBD + Gamma-Gamma", "seg_data": [{"label": "Loyal customers", "count": 1403, "revenue": 2713942.75}, {"label": "Champions", "count": 1300, "revenue": 12128115.56}, {"label": "Lost", "count": 1037, "revenue": 255450.49}, {"label": "At risk", "count": 869, "revenue": 1336781.4}, {"label": "Needs attention", "count": 478, "revenue": 367156.82}, {"label": "New customers", "count": 443, "revenue": 394638.61}, {"label": "Cannot lose them", "count": 273, "revenue": 462411.15}, {"label": "Potential loyalists", "count": 75, "revenue": 84914.39}], "seg_colors": {"Champions": "#00c4a0", "Loyal customers": "#4a9eff", "Potential loyalists": "#a78bfa", "At risk": "#f5a623", "New customers": "#5DCAA5", "Cannot lose them": "#D4537E", "Needs attention": "#526070", "Lost": "#f04b5a"}, "clv_scatter": {"At risk": {"color": "#f5a623", "points": [{"x": 1.0, "y": 574.52}, {"x": 1.0, "y": 239.69}, {"x": 1.0, "y": 383.14}, {"x": 1.0, "y": 732.66}, {"x": 1.0, "y": 332.68}, {"x": 1.0, "y": 477.13}, {"x": 1.0, "y": 406.59}, {"x": 1.0, "y": 461.9}, {"x": 1.0, "y": 107.55}, {"x": 1.0, "y": 924.71}, {"x": 1.0, "y": 625.68}, {"x": 1.0, "y": 174.02}, {"x": 1.0, "y": 459.74}, {"x": 1.0, "y": 93.81}, {"x": 1.0, "y": 1678.98}, {"x": 1.0, "y": 517.16}, {"x": 1.0, "y": 151.09}, {"x": 1.0, "y": 1451.46}, {"x": 1.0, "y": 55.22}, {"x": 1.0, "y": 593.93}, {"x": 1.0, "y": 339.34}, {"x": 1.0, "y": 415.9}, {"x": 1.0, "y": 501.64}, {"x": 1.0, "y": 96.92}, {"x": 1.0, "y": 523.31}, {"x": 1.0, "y": 262.01}, {"x": 1.0, "y": 584.56}, {"x": 1.0, "y": 147.81}, {"x": 1.0, "y": 1031.04}, {"x": 1.0, "y": 404.42}, {"x": 1.0, "y": 318.11}, {"x": 1.0, "y": 424.04}, {"x": 1.0, "y": 389.01}, {"x": 1.0, "y": 546.06}, {"x": 1.0, "y": 760.16}, {"x": 1.0, "y": 363.75}, {"x": 1.0, "y": 602.73}, {"x": 1.0, "y": 112.2}, {"x": 1.0, "y": 399.05}, {"x": 1.0, "y": 3812.07}, {"x": 1.0, "y": 300.23}, {"x": 1.0, "y": 112.34}, {"x": 1.0, "y": 315.27}, {"x": 1.0, "y": 641.0}, {"x": 1.0, "y": 742.28}, {"x": 1.0, "y": 178.97}, {"x": 1.0, "y": 227.59}, {"x": 1.0, "y": 1691.75}, {"x": 1.0, "y": 622.28}, {"x": 1.0, "y": 361.81}, {"x": 1.0, "y": 680.91}, {"x": 1.0, "y": 654.26}, {"x": 1.0, "y": 231.85}, {"x": 1.0, "y": 1806.1}, {"x": 1.0, "y": 135.68}, {"x": 1.0, "y": 284.73}, {"x": 1.0, "y": 212.01}, {"x": 1.0, "y": 202.84}, {"x": 1.0, "y": 409.74}, {"x": 1.0, "y": 836.39}, {"x": 1.0, "y": 9.26}, {"x": 1.0, "y": 223.71}, {"x": 1.0, "y": 303.89}, {"x": 1.0, "y": 236.17}, {"x": 1.0, "y": 177.27}, {"x": 1.0, "y": 149.83}, {"x": 1.0, "y": 590.97}, {"x": 1.0, "y": 443.34}, {"x": 1.0, "y": 318.16}, {"x": 1.0, "y": 496.11}, {"x": 1.0, "y": 688.86}, {"x": 1.0, "y": 200.28}, {"x": 1.0, "y": 237.72}, {"x": 1.0, "y": 119.97}, {"x": 1.0, "y": 964.46}, {"x": 1.0, "y": 757.23}, {"x": 1.0, "y": 150.27}, {"x": 1.0, "y": 226.67}, {"x": 1.0, "y": 104.69}, {"x": 1.0, "y": 113.6}, {"x": 1.0, "y": 444.49}, {"x": 1.0, "y": 1775.89}, {"x": 1.0, "y": 1233.55}, {"x": 1.0, "y": 1758.06}, {"x": 1.0, "y": 1218.52}, {"x": 1.0, "y": 222.34}, {"x": 1.0, "y": 388.07}]}, "Cannot lose them": {"color": "#D4537E", "points": [{"x": 1.0, "y": 17.53}, {"x": 1.0, "y": 65.96}, {"x": 1.0, "y": 714.37}, {"x": 1.0, "y": 360.63}, {"x": 1.0, "y": 282.05}, {"x": 1.0, "y": 155.23}, {"x": 1.0, "y": 60.28}, {"x": 1.0, "y": 33.0}, {"x": 1.0, "y": 13.97}, {"x": 1.0, "y": 50.2}, {"x": 1.0, "y": 180.25}, {"x": 1.0, "y": 61.28}, {"x": 1.0, "y": 618.5}, {"x": 1.0, "y": 68.23}, {"x": 1.0, "y": 171.11}, {"x": 1.0, "y": 14.43}, {"x": 1.0, "y": 55.85}, {"x": 1.0, "y": 373.63}, {"x": 1.0, "y": 32.11}, {"x": 1.0, "y": 3275.21}, {"x": 1.0, "y": 29.16}, {"x": 1.0, "y": 156.21}, {"x": 1.0, "y": 30.75}, {"x": 1.0, "y": 491.21}, {"x": 1.0, "y": 1445.24}, {"x": 1.0, "y": 321.83}, {"x": 1.0, "y": 505.14}, {"x": 1.0, "y": 766.16}, {"x": 1.0, "y": 92.23}, {"x": 1.0, "y": 49.64}, {"x": 1.0, "y": 238.65}, {"x": 1.0, "y": 55.29}]}, "Champions": {"color": "#00c4a0", "points": [{"x": 0.0, "y": 1642.7}, {"x": 0.0, "y": 2270.92}, {"x": 0.0, "y": 719.09}, {"x": 0.002, "y": 1375.61}, {"x": 0.018, "y": 949.21}, {"x": 0.0, "y": 1337.53}, {"x": 0.0, "y": 2082.68}, {"x": 0.0, "y": 4789.86}, {"x": 0.0, "y": 1711.53}, {"x": 0.002, "y": 1386.89}, {"x": 0.0, "y": 1281.74}, {"x": 0.012, "y": 2291.24}, {"x": 0.003, "y": 998.33}, {"x": 0.0, "y": 4319.06}, {"x": 0.0, "y": 6847.98}, {"x": 0.01, "y": 2045.23}, {"x": 0.0, "y": 1357.95}, {"x": 0.0, "y": 3545.37}, {"x": 0.013, "y": 1679.32}, {"x": 0.009, "y": 946.93}, {"x": 0.003, "y": 2251.95}, {"x": 0.0, "y": 1240.52}, {"x": 0.003, "y": 1971.0}, {"x": 0.002, "y": 1061.22}, {"x": 0.0, "y": 2928.5}, {"x": 0.002, "y": 2381.34}, {"x": 0.002, "y": 1419.5}, {"x": 0.0, "y": 4508.38}, {"x": 0.0, "y": 5396.08}, {"x": 0.01, "y": 1898.84}, {"x": 0.017, "y": 1713.29}, {"x": 0.004, "y": 2978.3}, {"x": 0.0, "y": 5087.4}, {"x": 0.0, "y": 2139.19}, {"x": 0.003, "y": 875.61}, {"x": 0.0, "y": 1123.15}, {"x": 0.003, "y": 932.33}, {"x": 0.0, "y": 3900.69}, {"x": 0.0, "y": 1162.63}, {"x": 0.002, "y": 4000.96}, {"x": 0.0, "y": 5576.39}, {"x": 0.0, "y": 4113.2}, {"x": 0.001, "y": 2509.15}, {"x": 0.002, "y": 1235.54}, {"x": 0.0, "y": 1668.9}, {"x": 0.0, "y": 2016.65}, {"x": 0.0, "y": 3584.29}, {"x": 0.0, "y": 5661.24}, {"x": 0.002, "y": 6005.23}, {"x": 0.007, "y": 1447.63}, {"x": 0.002, "y": 1836.84}, {"x": 0.0, "y": 2000.62}, {"x": 0.0, "y": 3122.32}, {"x": 0.0, "y": 4040.72}, {"x": 0.01, "y": 2237.27}, {"x": 0.0, "y": 766.04}, {"x": 0.009, "y": 985.76}, {"x": 0.003, "y": 3315.2}, {"x": 0.0, "y": 3373.36}, {"x": 0.001, "y": 2205.38}, {"x": 0.0, "y": 5652.17}, {"x": 0.0, "y": 1251.44}, {"x": 0.0, "y": 1037.87}, {"x": 0.0, "y": 4831.14}, {"x": 0.005, "y": 1021.7}, {"x": 0.0, "y": 1507.18}, {"x": 0.0, "y": 6682.25}, {"x": 0.002, "y": 5053.82}, {"x": 0.002, "y": 970.48}, {"x": 0.003, "y": 1665.37}, {"x": 0.003, "y": 2235.82}, {"x": 0.0, "y": 1715.3}, {"x": 0.014, "y": 1204.43}, {"x": 0.007, "y": 1565.62}, {"x": 0.0, "y": 967.88}, {"x": 0.008, "y": 1334.57}, {"x": 0.0, "y": 3197.71}, {"x": 0.0, "y": 3747.47}, {"x": 0.0, "y": 1786.4}, {"x": 0.0, "y": 4231.24}, {"x": 0.003, "y": 810.62}, {"x": 0.0, "y": 2269.68}, {"x": 0.0, "y": 1052.11}, {"x": 0.003, "y": 2306.92}, {"x": 0.002, "y": 2582.28}, {"x": 0.003, "y": 286.22}, {"x": 0.002, "y": 1271.9}, {"x": 0.002, "y": 1687.06}, {"x": 0.0, "y": 2159.28}, {"x": 0.0, "y": 1102.19}, {"x": 0.001, "y": 6804.36}, {"x": 0.0, "y": 1794.08}, {"x": 0.0, "y": 6626.35}, {"x": 0.0, "y": 4236.69}, {"x": 0.0, "y": 5163.29}, {"x": 0.0, "y": 2451.24}, {"x": 0.0, "y": 2631.71}, {"x": 0.0, "y": 4359.23}, {"x": 0.0, "y": 4147.7}, {"x": 0.002, "y": 2475.69}, {"x": 0.0, "y": 2237.2}, {"x": 0.004, "y": 949.79}, {"x": 0.0, "y": 2182.79}, {"x": 0.011, "y": 1273.1}, {"x": 0.015, "y": 3219.86}, {"x": 0.0, "y": 2673.78}, {"x": 0.003, "y": 4360.69}, {"x": 0.004, "y": 2465.25}, {"x": 0.0, "y": 4720.2}, {"x": 0.007, "y": 1782.77}, {"x": 0.0, "y": 3290.38}, {"x": 0.005, "y": 965.82}, {"x": 0.009, "y": 2311.64}, {"x": 0.0, "y": 609.67}, {"x": 0.011, "y": 1760.5}, {"x": 0.0, "y": 1408.32}, {"x": 0.0, "y": 2344.26}, {"x": 0.0, "y": 1907.1}, {"x": 0.005, "y": 798.06}, {"x": 0.003, "y": 4131.94}, {"x": 0.002, "y": 3364.03}, {"x": 0.002, "y": 636.37}, {"x": 0.0, "y": 2937.59}, {"x": 0.0, "y": 2130.36}, {"x": 0.0, "y": 3058.17}]}, "Lost": {"color": "#f04b5a", "points": [{"x": 1.0, "y": 213.94}, {"x": 1.0, "y": 1772.73}, {"x": 1.0, "y": 1226.73}, {"x": 1.0, "y": 661.82}, {"x": 1.0, "y": 900.88}, {"x": 1.0, "y": 833.89}, {"x": 1.0, "y": 904.68}, {"x": 1.0, "y": 597.03}, {"x": 1.0, "y": 959.05}, {"x": 1.0, "y": 857.75}, {"x": 1.0, "y": 22.07}, {"x": 1.0, "y": 751.99}, {"x": 1.0, "y": 75.68}, {"x": 1.0, "y": 258.79}, {"x": 1.0, "y": 754.03}, {"x": 1.0, "y": 417.18}, {"x": 1.0, "y": 912.42}, {"x": 1.0, "y": 649.21}, {"x": 1.0, "y": 995.93}, {"x": 1.0, "y": 542.15}, {"x": 1.0, "y": 505.76}, {"x": 1.0, "y": 1446.55}, {"x": 1.0, "y": 806.21}, {"x": 1.0, "y": 935.61}, {"x": 1.0, "y": 419.31}, {"x": 1.0, "y": 391.97}, {"x": 1.0, "y": 419.82}, {"x": 1.0, "y": 273.0}, {"x": 1.0, "y": 1413.02}, {"x": 1.0, "y": 665.19}, {"x": 1.0, "y": 777.64}, {"x": 1.0, "y": 259.88}, {"x": 1.0, "y": 1616.73}, {"x": 1.0, "y": 289.64}, {"x": 1.0, "y": 1133.66}, {"x": 1.0, "y": 899.73}, {"x": 1.0, "y": 426.24}, {"x": 1.0, "y": 29.94}, {"x": 1.0, "y": 344.78}, {"x": 1.0, "y": 1673.45}, {"x": 1.0, "y": 187.33}, {"x": 1.0, "y": 41.03}, {"x": 1.0, "y": 772.17}, {"x": 1.0, "y": 841.24}, {"x": 1.0, "y": 691.71}, {"x": 1.0, "y": 759.38}, {"x": 1.0, "y": 765.49}, {"x": 1.0, "y": 760.01}, {"x": 1.0, "y": 781.08}, {"x": 1.0, "y": 1175.96}, {"x": 1.0, "y": 708.35}, {"x": 1.0, "y": 809.07}, {"x": 1.0, "y": 535.13}, {"x": 1.0, "y": 655.58}, {"x": 1.0, "y": 3212.77}, {"x": 1.0, "y": 1003.81}, {"x": 1.0, "y": 992.73}, {"x": 1.0, "y": 1633.61}, {"x": 1.0, "y": 100.73}, {"x": 1.0, "y": 682.33}, {"x": 1.0, "y": 638.04}, {"x": 1.0, "y": 474.3}, {"x": 1.0, "y": 1232.12}, {"x": 1.0, "y": 856.33}, {"x": 1.0, "y": 141.28}, {"x": 1.0, "y": 190.31}, {"x": 1.0, "y": 854.52}, {"x": 1.0, "y": 828.32}, {"x": 1.0, "y": 191.26}, {"x": 1.0, "y": 887.94}, {"x": 1.0, "y": 901.22}, {"x": 1.0, "y": 4018.18}, {"x": 1.0, "y": 1155.52}, {"x": 1.0, "y": 755.44}, {"x": 1.0, "y": 922.83}, {"x": 1.0, "y": 692.49}, {"x": 1.0, "y": 237.39}, {"x": 1.0, "y": 937.78}, {"x": 1.0, "y": 91.51}, {"x": 1.0, "y": 3114.48}, {"x": 1.0, "y": 1040.26}, {"x": 1.0, "y": 1772.73}, {"x": 1.0, "y": 735.48}, {"x": 1.0, "y": 74.01}, {"x": 1.0, "y": 1022.98}, {"x": 1.0, "y": 841.06}, {"x": 1.0, "y": 775.78}, {"x": 1.0, "y": 364.54}, {"x": 1.0, "y": 295.34}, {"x": 1.0, "y": 139.45}, {"x": 1.0, "y": 288.68}, {"x": 1.0, "y": 1389.82}, {"x": 1.0, "y": 393.38}, {"x": 1.0, "y": 186.27}, {"x": 1.0, "y": 649.03}, {"x": 1.0, "y": 604.2}, {"x": 1.0, "y": 159.12}, {"x": 1.0, "y": 1011.79}]}, "Loyal customers": {"color": "#4a9eff", "points": [{"x": 0.002, "y": 1289.58}, {"x": 0.004, "y": 1110.47}, {"x": 0.0, "y": 474.4}, {"x": 0.526, "y": 2964.22}, {"x": 0.288, "y": 695.22}, {"x": 0.995, "y": 365.26}, {"x": 0.998, "y": 599.07}, {"x": 0.007, "y": 674.78}, {"x": 0.809, "y": 458.87}, {"x": 0.0, "y": 832.24}, {"x": 0.993, "y": 810.96}, {"x": 0.005, "y": 1605.82}, {"x": 0.741, "y": 153.43}, {"x": 0.005, "y": 221.51}, {"x": 0.682, "y": 1420.33}, {"x": 0.373, "y": 1303.08}, {"x": 0.736, "y": 961.82}, {"x": 0.894, "y": 1423.58}, {"x": 0.483, "y": 1798.65}, {"x": 0.221, "y": 584.89}, {"x": 0.922, "y": 780.63}, {"x": 0.0, "y": 156.49}, {"x": 0.624, "y": 1092.57}, {"x": 0.841, "y": 504.61}, {"x": 0.002, "y": 899.27}, {"x": 0.01, "y": 776.54}, {"x": 0.984, "y": 607.52}, {"x": 0.832, "y": 1392.65}, {"x": 0.002, "y": 594.41}, {"x": 0.0, "y": 2527.26}, {"x": 0.186, "y": 1200.37}, {"x": 0.486, "y": 141.18}, {"x": 0.93, "y": 3132.21}, {"x": 0.988, "y": 594.86}, {"x": 0.0, "y": 477.33}, {"x": 0.004, "y": 496.01}, {"x": 0.997, "y": 192.9}, {"x": 0.998, "y": 530.5}, {"x": 0.997, "y": 673.71}, {"x": 0.996, "y": 996.19}, {"x": 0.972, "y": 1368.77}, {"x": 0.011, "y": 486.38}, {"x": 0.0, "y": 329.99}, {"x": 0.509, "y": 922.1}, {"x": 0.473, "y": 1592.65}, {"x": 0.226, "y": 612.38}, {"x": 0.235, "y": 2281.33}, {"x": 0.014, "y": 476.41}, {"x": 0.26, "y": 492.23}, {"x": 0.878, "y": 473.67}, {"x": 0.942, "y": 570.34}, {"x": 0.0, "y": 1032.2}, {"x": 0.591, "y": 1248.8}, {"x": 0.0, "y": 107.26}, {"x": 0.002, "y": 578.23}, {"x": 0.997, "y": 1251.63}, {"x": 0.002, "y": 658.73}, {"x": 0.918, "y": 722.26}, {"x": 0.002, "y": 572.18}, {"x": 0.0, "y": 615.35}, {"x": 0.235, "y": 663.93}, {"x": 0.009, "y": 528.29}, {"x": 0.891, "y": 3627.83}, {"x": 0.185, "y": 2703.13}, {"x": 0.0, "y": 1100.2}, {"x": 0.151, "y": 2912.24}, {"x": 0.998, "y": 504.45}, {"x": 0.0, "y": 315.67}, {"x": 0.203, "y": 966.65}, {"x": 0.976, "y": 857.15}, {"x": 0.322, "y": 1298.93}, {"x": 0.0, "y": 459.38}, {"x": 0.428, "y": 6756.57}, {"x": 0.014, "y": 743.88}, {"x": 0.63, "y": 912.34}, {"x": 0.75, "y": 2312.31}, {"x": 0.638, "y": 440.42}, {"x": 0.0, "y": 357.02}, {"x": 0.997, "y": 797.17}, {"x": 0.0, "y": 487.69}, {"x": 0.314, "y": 818.78}, {"x": 0.14, "y": 466.28}, {"x": 0.192, "y": 275.83}, {"x": 0.001, "y": 1152.9}, {"x": 0.0, "y": 1300.39}, {"x": 0.291, "y": 4114.19}, {"x": 0.425, "y": 860.79}, {"x": 0.343, "y": 304.29}, {"x": 0.289, "y": 2923.27}, {"x": 0.0, "y": 1256.1}, {"x": 0.004, "y": 963.25}, {"x": 0.228, "y": 1692.07}, {"x": 0.006, "y": 520.49}, {"x": 0.002, "y": 840.53}, {"x": 0.394, "y": 994.3}, {"x": 0.274, "y": 726.19}, {"x": 0.993, "y": 297.97}, {"x": 0.995, "y": 295.34}, {"x": 0.003, "y": 722.2}, {"x": 0.002, "y": 1083.02}, {"x": 0.002, "y": 1651.49}, {"x": 0.552, "y": 1589.43}, {"x": 0.0, "y": 985.77}, {"x": 0.002, "y": 928.02}, {"x": 0.005, "y": 470.58}, {"x": 0.87, "y": 3693.73}, {"x": 0.794, "y": 1212.99}, {"x": 0.838, "y": 363.7}, {"x": 0.994, "y": 419.84}, {"x": 0.0, "y": 1064.96}, {"x": 0.971, "y": 1135.74}, {"x": 0.0, "y": 819.3}, {"x": 0.0, "y": 1018.19}, {"x": 0.926, "y": 788.71}, {"x": 0.003, "y": 1307.53}, {"x": 0.338, "y": 1341.27}, {"x": 0.997, "y": 759.2}, {"x": 0.996, "y": 544.14}, {"x": 0.005, "y": 241.43}, {"x": 0.0, "y": 1227.36}, {"x": 0.0, "y": 609.97}, {"x": 0.268, "y": 832.15}, {"x": 0.518, "y": 919.73}, {"x": 0.0, "y": 177.08}, {"x": 0.003, "y": 638.66}, {"x": 0.287, "y": 438.44}, {"x": 0.0, "y": 947.84}, {"x": 0.012, "y": 291.0}, {"x": 0.687, "y": 483.11}, {"x": 0.011, "y": 1336.06}, {"x": 0.236, "y": 4582.75}, {"x": 0.912, "y": 928.69}, {"x": 0.007, "y": 1103.52}, {"x": 0.0, "y": 330.98}, {"x": 0.185, "y": 3421.63}, {"x": 0.002, "y": 126.4}, {"x": 0.994, "y": 806.24}, {"x": 0.004, "y": 232.46}, {"x": 0.005, "y": 495.22}, {"x": 0.653, "y": 484.42}, {"x": 0.0, "y": 369.85}]}, "Needs attention": {"color": "#526070", "points": [{"x": 1.0, "y": 1044.07}, {"x": 0.994, "y": 1296.22}, {"x": 0.402, "y": 1324.58}, {"x": 0.156, "y": 1104.82}, {"x": 1.0, "y": 456.31}, {"x": 1.0, "y": 477.86}, {"x": 0.75, "y": 803.64}, {"x": 0.342, "y": 327.42}, {"x": 0.955, "y": 314.47}, {"x": 0.121, "y": 3295.03}, {"x": 0.216, "y": 910.62}, {"x": 0.14, "y": 825.85}, {"x": 0.256, "y": 757.41}, {"x": 1.0, "y": 34.97}, {"x": 0.995, "y": 694.3}, {"x": 1.0, "y": 103.14}, {"x": 0.909, "y": 799.87}, {"x": 0.281, "y": 628.14}, {"x": 1.0, "y": 1903.75}, {"x": 1.0, "y": 973.45}, {"x": 0.245, "y": 1978.47}, {"x": 0.225, "y": 460.68}, {"x": 0.84, "y": 284.47}, {"x": 0.756, "y": 2458.18}, {"x": 0.776, "y": 231.11}, {"x": 1.0, "y": 879.76}, {"x": 0.955, "y": 592.3}, {"x": 1.0, "y": 2754.93}, {"x": 0.706, "y": 725.58}, {"x": 0.194, "y": 1308.51}, {"x": 0.256, "y": 2382.55}, {"x": 1.0, "y": 650.53}, {"x": 0.994, "y": 936.04}, {"x": 0.762, "y": 561.04}, {"x": 0.76, "y": 487.48}, {"x": 0.184, "y": 892.06}, {"x": 0.286, "y": 324.96}, {"x": 1.0, "y": 787.62}, {"x": 0.158, "y": 635.88}, {"x": 0.15, "y": 825.25}, {"x": 1.0, "y": 1725.33}, {"x": 0.39, "y": 820.36}, {"x": 1.0, "y": 1013.36}, {"x": 0.781, "y": 823.65}, {"x": 0.979, "y": 687.23}]}, "New customers": {"color": "#5DCAA5", "points": [{"x": 0.006, "y": 1651.18}, {"x": 0.003, "y": 938.79}, {"x": 0.009, "y": 2168.26}, {"x": 0.002, "y": 2003.85}, {"x": 0.0, "y": 93.67}, {"x": 0.0, "y": 923.56}, {"x": 0.0, "y": 104.68}, {"x": 0.0, "y": 2334.28}, {"x": 0.008, "y": 888.83}, {"x": 0.002, "y": 309.83}, {"x": 0.0, "y": 1098.65}, {"x": 0.0, "y": 5507.75}, {"x": 0.008, "y": 232.97}, {"x": 0.005, "y": 899.05}, {"x": 0.004, "y": 965.76}, {"x": 0.0, "y": 803.94}, {"x": 0.007, "y": 537.3}, {"x": 0.0, "y": 262.63}, {"x": 0.003, "y": 988.18}, {"x": 0.012, "y": 210.84}, {"x": 0.0, "y": 812.63}, {"x": 0.0, "y": 499.72}, {"x": 0.0, "y": 1730.67}, {"x": 0.0, "y": 444.97}, {"x": 0.0, "y": 447.83}, {"x": 0.0, "y": 198.8}, {"x": 0.002, "y": 321.74}, {"x": 0.0, "y": 730.72}, {"x": 0.0, "y": 263.54}, {"x": 0.0, "y": 1831.59}, {"x": 0.002, "y": 1057.83}, {"x": 0.0, "y": 1092.05}, {"x": 0.0, "y": 249.79}, {"x": 0.0, "y": 377.2}, {"x": 0.005, "y": 286.0}, {"x": 0.0, "y": 123.35}, {"x": 0.0, "y": 1701.82}, {"x": 0.0, "y": 332.15}, {"x": 0.0, "y": 479.22}, {"x": 0.0, "y": 704.83}, {"x": 0.001, "y": 962.0}, {"x": 0.0, "y": 122.15}, {"x": 0.0, "y": 563.37}, {"x": 0.0, "y": 902.12}, {"x": 0.0, "y": 443.74}]}, "Potential loyalists": {"color": "#a78bfa", "points": [{"x": 0.116, "y": 934.6}, {"x": 0.162, "y": 582.7}, {"x": 0.279, "y": 559.07}, {"x": 0.272, "y": 828.16}, {"x": 0.197, "y": 1510.18}, {"x": 0.465, "y": 1013.11}, {"x": 0.17, "y": 573.11}, {"x": 0.989, "y": 864.15}, {"x": 0.401, "y": 537.68}]}}};
+
+    const T = '#00c4a0', A = '#f5a623', R = '#f04b5a', B = '#4a9eff', P = '#a78bfa', G = '#526070';
+    const T2 = 'rgba(0,196,160,', A2 = 'rgba(245,166,35,', R2 = 'rgba(240,75,90,', B2 = 'rgba(74,158,255,';
+
+    // ── Helpers ──
+    function set(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+    function fmtRev(v) {
+      if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+      if (v >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+      if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+      return '$' + v.toFixed(0);
+    }
+
+    // ── Navigation ──
+    function nav(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + id).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // ── Chart defaults ──
+    const DEF = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {} } },
+      elements: { point: { radius: 0 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#526070', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#526070', font: { size: 10 } } }
+      }
+    };
+
+    // ── Populate all KPIs and static text ──
+    function populateKPIs() {
+      // Executive summary
+      set('kpi-total-rev', fmtRev(DATA.total_rev));
+      const wowEl = document.getElementById('kpi-wow');
+      if (wowEl) {
+        const sign = DATA.wow >= 0 ? '▲' : '▼';
+        wowEl.textContent = sign + ' ' + Math.abs(DATA.wow).toFixed(1) + '% week-on-week';
+        wowEl.className = 'kpi-change ' + (DATA.wow >= 0 ? 'up' : 'dn');
+      }
+      set('kpi-r2', DATA.model_metrics.test.r2.toFixed(4));
+      set('kpi-avg-clv', fmtRev(DATA.avg_clv));
+      set('kpi-n-customers', DATA.n_customers.toLocaleString() + ' customers · 12-month projection');
+      set('kpi-clv-model', DATA.clv_model_used + ' · UK retail');
+      set('kpi-rev-risk', fmtRev(DATA.rev_at_risk));
+      set('kpi-churn-count', '▼ ' + DATA.n_churn_high.toLocaleString() + ' customers at high churn risk');
+
+      // Alert banners
+      set('ab-inv-crit', DATA.inv_crit + ' SKUs');
+      set('ab-inv-warn', DATA.inv_warn + ' SKUs');
+      set('ab-inv-safe', DATA.inv_safe.toLocaleString() + ' SKUs');
+      set('ab-churn-high', DATA.n_churn_high.toLocaleString());
+      set('ab-rev-risk', fmtRev(DATA.rev_at_risk));
+      set('ab-champions', DATA.n_champions.toLocaleString());
+
+      // Exec forecast stats
+      set('exec-avg-wk', fmtRev(DATA.fc_avg_weekly));
+      set('exec-peak-wk', 'W' + DATA.fc_peak_week);
+      set('exec-fc-total', fmtRev(DATA.fc_total_12w));
+
+      // State legend
+      set('leg-ca', DATA.ca_pct);
+      set('leg-tx', DATA.tx_pct);
+      set('leg-wi', DATA.wi_pct);
+
+      // Sidebar badge
+      set('inv-badge', DATA.inv_crit);
+
+      // Forecast page
+      set('fc-kpi-r2', DATA.model_metrics.test.r2.toFixed(4));
+      set('fc-last-updated', 'Model R² = ' + DATA.model_metrics.test.r2.toFixed(4) + ' · Test 2016');
+      if (DATA.shap_data && DATA.shap_data.length) set('fc-top-feature', DATA.shap_data[0].feature + ' SHAP');
+      set('insight-ca-pct', DATA.ca_pct);
+
+      // Inventory page
+      set('inv-kpi-crit', DATA.inv_crit);
+      set('inv-kpi-warn', DATA.inv_warn);
+      set('inv-kpi-safe', DATA.inv_safe.toLocaleString());
+      set('inv-kpi-total', DATA.inv_total.toLocaleString());
+      const critPct = (DATA.inv_crit / DATA.inv_total * 100).toFixed(1);
+      const warnPct = (DATA.inv_warn / DATA.inv_total * 100).toFixed(1);
+      const safePct = DATA.inv_cov.toFixed(1);
+      set('inv-kpi-cov-pct', safePct + '% of inventory is safe');
+      set('inv-prog-crit-pct', critPct + '%');
+      set('inv-prog-warn-pct', warnPct + '%');
+      set('inv-prog-safe-pct', safePct + '%');
+      const setW = (id, w) => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; };
+      setW('inv-prog-crit', critPct); setW('inv-prog-warn', warnPct); setW('inv-prog-safe', safePct);
+      set('action-crit-tag', DATA.inv_crit + ' items · immediate');
+      set('action-warn-tag', DATA.inv_warn + ' items · plan now');
+      set('action-safe-tag', DATA.inv_safe.toLocaleString() + ' items · monitor');
+
+      // Customer page
+      set('cust-n-total', DATA.n_customers.toLocaleString());
+      set('cust-kpi-champ', DATA.n_champions.toLocaleString());
+      set('cust-kpi-champ-pct', (DATA.n_champions / DATA.n_customers * 100).toFixed(0) + '% of customers · highest value');
+      set('cust-kpi-clv', fmtRev(DATA.avg_clv));
+      set('cust-clv-model-note', DATA.clv_model_used + ' model');
+      set('cust-kpi-churn', DATA.n_churn_high.toLocaleString());
+      set('cust-kpi-churn-pct', (DATA.n_churn_high / DATA.n_customers * 100).toFixed(1) + '% of customers at risk');
+      set('cust-kpi-risk', fmtRev(DATA.rev_at_risk));
+
+      // Segment action card counts
+      const champSeg = DATA.seg_data.find(s => s.label === 'Champions');
+      const atRiskSeg = DATA.seg_data.find(s => s.label === 'At risk');
+      const lostSeg = DATA.seg_data.find(s => s.label === 'Lost');
+      if (champSeg) set('act-champions', champSeg.count.toLocaleString());
+      if (atRiskSeg) set('act-at-risk', atRiskSeg.count.toLocaleString());
+      if (lostSeg) set('act-lost', lostSeg.count.toLocaleString());
+
+      // Model page
+      set('model-n-customers', DATA.n_customers.toLocaleString());
+    }
+
+    // ── Exec 12-week forecast sparkline ──
+    function buildExecFcChart() {
+      const vals = DATA.fc_all_values.map(v => parseFloat((v / 1e6).toFixed(2)));
+      const peak = DATA.fc_peak_week - 1;
+      new Chart(document.getElementById('execFcChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.fc_all_labels, datasets: [{
+            data: vals,
+            backgroundColor: vals.map((_, i) => i === peak ? T : T2 + '0.4)'),
+            borderColor: vals.map((_, i) => i === peak ? T : 'transparent'),
+            borderWidth: 1, borderRadius: 4
+          }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => '$' + d.raw + 'M' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 6 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' } }
+          }
+        }
+      });
+    }
+
+    // ── Weekly sales + forecast chart ──
+    // ── Sales chart state — exposed so range buttons and resetZoom can reach them ──
+    let _salesChart = null;
+    let _salesFull  = null;
+
+    function buildSalesChart() {
+      const actualVals = DATA.weekly_values.map(v => parseFloat((v / 1e6).toFixed(3)));
+      const fcVals = DATA.fc_all_values.map(v => parseFloat((v / 1e6).toFixed(3)));
+      const fcHi = fcVals.map(v => parseFloat((v * 1.1).toFixed(3)));
+      const fcLo = fcVals.map(v => parseFloat((v * 0.9).toFixed(3)));
+      const allLabels = [...DATA.weekly_labels, ...DATA.fc_all_labels];
+      const n = actualVals.length;
+      const actData = [...actualVals, ...Array(fcVals.length).fill(null)];
+      const fcd = [...Array(n).fill(null), ...fcVals];
+      const hiD = [...Array(n).fill(null), ...fcHi];
+      const loD = [...Array(n).fill(null), ...fcLo];
+      _salesFull = { labels: allLabels, act: actData, fc: fcd, hi: hiD, lo: loD };
+      _salesChart = new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+          labels: allLabels, datasets: [
+            {
+              label: 'Actual', data: actData, borderColor: B, borderWidth: 2, fill: true,
+              backgroundColor: B2 + '0.06)', pointRadius: 0, tension: .3
+            },
+            {
+              label: 'Forecast', data: fcd, borderColor: T, borderWidth: 2, borderDash: [5, 4], fill: true,
+              backgroundColor: T2 + '0.05)', pointRadius: 3, pointBackgroundColor: T, pointStyle: 'diamond', tension: .3
+            },
+            { label: 'Upper', data: hiD, borderColor: 'transparent', backgroundColor: T2 + '0.08)', fill: '+1', pointRadius: 0 },
+            { label: 'Lower', data: loD, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            zoom: {
+              zoom:   { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+              pan:    { enabled: true, mode: 'x' },
+              limits: { x: { minRange: 4 } }
+            },
+            ...DEF.plugins, legend: {
+              display: true, position: 'top',
+              labels: {
+                color: '#8fa3bc', font: { size: 11 }, boxWidth: 10, padding: 12,
+                filter: i => i.text !== 'Upper' && i.text !== 'Lower'
+              }
+            },
+            tooltip: {
+              mode: 'index', intersect: false, callbacks: {
+                label: d =>
+                  d.dataset.label === 'Upper' || d.dataset.label === 'Lower' ? null : d.dataset.label + ': $' + d.raw + 'M'
+              }
+            }
+          },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 10 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' } }
+          }
+        }
+      });
+    }
+
+
+    function setSalesView(nWeeks) {
+      if (!_salesChart || !_salesFull) return;
+      _salesChart.resetZoom();
+      const total = _salesFull.labels.length;
+      const start = nWeeks === 0 ? 0 : Math.max(0, total - nWeeks);
+      _salesChart.data.labels           = _salesFull.labels.slice(start);
+      _salesChart.data.datasets[0].data = _salesFull.act.slice(start);
+      _salesChart.data.datasets[1].data = _salesFull.fc.slice(start);
+      _salesChart.data.datasets[2].data = _salesFull.hi.slice(start);
+      _salesChart.data.datasets[3].data = _salesFull.lo.slice(start);
+      _salesChart.update('none');
+      ['rb-4','rb-13','rb-26','rb-all'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+      });
+      const map = { 16:'rb-4', 25:'rb-13', 38:'rb-26', 0:'rb-all' };
+      const active = document.getElementById(map[nWeeks] || 'rb-all');
+      if (active) active.classList.add('active');
+    }
+
+    function resetSalesZoom() {
+      if (_salesChart) _salesChart.resetZoom();
+    }
+
+    // ── State donut ──
+    function buildStateChart() {
+      new Chart(document.getElementById('stateChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['CA', 'TX', 'WI'], datasets: [{
+            data: [DATA.ca_pct, DATA.tx_pct, DATA.wi_pct],
+            backgroundColor: [T, B, A], borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '62%'
+          }]
+        },
+        options: { ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.label + ': ' + d.raw + '%' } } } }
+      });
+    }
+
+    // ── Monthly growth sparkline ──
+    function buildGrowthChart() {
+      new Chart(document.getElementById('growthSparkChart'), {
+        type: 'line',
+        data: {
+          labels: DATA.monthly_labels, datasets: [{
+            data: DATA.monthly_growth,
+            borderColor: A, borderWidth: 1.5, fill: true, backgroundColor: A2 + '0.08)', pointRadius: 0, tension: .3
+          }]
+        },
+        options: {
+          ...DEF, scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 6 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => v + '%' } }
+          }
+        }
+      });
+    }
+
+    // ── Top 5 products ──
+    function buildTopProds() {
+      if (!DATA.top5 || !DATA.top5.length) { document.getElementById('topProds').textContent = 'No data'; return; }
+      const max = DATA.top5[0].rev;
+      document.getElementById('topProds').innerHTML = DATA.top5.map((p, i) => `
+  <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #253040;${i === DATA.top5.length - 1 ? 'border:none' : ''}">
+    <span style="font-size:11px;font-weight:600;color:#526070;width:18px">#${i + 1}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:500;color:#e8eef5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+      <div style="height:4px;background:#253040;border-radius:2px;margin-top:4px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(p.rev / max * 100)}%;background:${i === 0 ? T : B};border-radius:2px"></div>
+      </div>
+    </div>
+    <span style="font-size:12px;font-weight:600;color:#8fa3bc;white-space:nowrap">${fmtRev(p.rev)}</span>
+  </div>`).join('');
+    }
+
+    // ── Store/category dropdowns ──
+    function buildStoreDropdown() {
+      const storeEl = document.getElementById('fcStore');
+      const catEl = document.getElementById('fcCat');
+      storeEl.innerHTML = DATA.fc_stores.map(s => `<option value="${s}">${DATA.store_display[s] || s}</option>`).join('');
+      catEl.innerHTML = DATA.fc_cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    // ── Forecast drilldown chart ──
+    let fcChart = null;
+    function updateForecast() {
+      const store = document.getElementById('fcStore').value;
+      const cat = document.getElementById('fcCat').value;
+      const d = (DATA.fc_by_store_cat[store] || {})[cat];
+
+      if (!d || !d.qty || !d.qty.length) {
+        if (fcChart) { fcChart.destroy(); fcChart = null; }
+        set('fcAvg', '—'); set('fcPeak', '—'); set('fcRev', '—'); set('fcMae', '—');
+        return;
+      }
+
+      const qty = d.qty;
+      const avg = qty.reduce((s, v) => s + v, 0) / qty.length;
+      const barColors = qty.map(v => v >= avg ? T : B2 + '0.55)');
+
+      if (fcChart) fcChart.destroy();
+      fcChart = new Chart(document.getElementById('fcMainChart'), {
+        type: 'bar',
+        data: {
+          labels: d.labels, datasets: [
+            {
+              label: 'Forecast (units)',
+              data: qty,
+              backgroundColor: barColors,
+              borderRadius: 4,
+              order: 2
+            },
+            {
+              label: 'Upper bound (+15%)',
+              type: 'line',
+              data: qty.map(v => v * 1.15),
+              borderColor: 'rgba(0,196,160,0.4)',
+              borderWidth: 1.5,
+              borderDash: [5, 4],
+              pointRadius: 0,
+              fill: false,
+              order: 1
+            },
+            {
+              label: '12-wk average',
+              type: 'line',
+              data: Array(qty.length).fill(Math.round(avg)),
+              borderColor: 'rgba(245,166,35,0.7)',
+              borderWidth: 1.5,
+              borderDash: [8, 4],
+              pointRadius: 0,
+              fill: false,
+              order: 0
+            }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            ...DEF.plugins,
+            legend: {
+              display: true, position: 'top',
+              labels: {
+                color: '#8fa3bc', font: { size: 10 }, boxWidth: 12, padding: 14,
+                usePointStyle: true,
+                generateLabels: chart => [
+                  { text: 'Above avg week', fillStyle: T, strokeStyle: T, pointStyle: 'rect', fontColor: '#8fa3bc' },
+                  { text: 'Below avg week', fillStyle: 'rgba(74,158,255,0.55)', strokeStyle: 'rgba(74,158,255,0.55)', pointStyle: 'rect', fontColor: '#8fa3bc' },
+                  { text: 'Upper bound (+15%)', fillStyle: 'transparent', strokeStyle: 'rgba(0,196,160,0.4)', pointStyle: 'line', fontColor: '#8fa3bc', lineDash: [5, 4] },
+                  { text: '12-wk average', fillStyle: 'transparent', strokeStyle: 'rgba(245,166,35,0.7)', pointStyle: 'line', fontColor: '#8fa3bc', lineDash: [8, 4] }
+                ]
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              filter: item => item.dataset.label === 'Forecast (units)',
+              callbacks: {
+                title: ctx => ctx.length ? `${ctx[0].label} — Demand Forecast` : '',
+                label: ctx => {
+                  const v = Math.round(ctx.parsed.y);
+                  const pct = Math.round((v / avg - 1) * 100);
+                  const sign = pct >= 0 ? '+' : '';
+                  const tag = pct >= 0 ? '▲ above avg' : '▼ below avg';
+                  return [
+                    `  Forecast   : ${v.toLocaleString()} units`,
+                    `  vs. avg    : ${sign}${pct}% ${tag}`,
+                    `  Upper bound: ${Math.round(v * 1.15).toLocaleString()} units`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ...DEF.scales.x },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => v.toLocaleString() + ' u' } }
+          }
+        }
+      });
+
+      set('fcAvg', Math.round(qty.reduce((a, b) => a + b, 0) / qty.length));
+      set('fcPeak', 'W' + d.peak_wk);
+      set('fcRev', fmtRev(d.rev));
+      set('fcMae', d.mae + ' units');
+    }
+
+    // ── Monthly trend chart ──
+    function buildTrendChart() {
+      new Chart(document.getElementById('trendChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.monthly_labels, datasets: [
+            { type: 'bar', label: 'Revenue ($M)', data: DATA.monthly_values, backgroundColor: B2 + '0.5)', borderRadius: 3, yAxisID: 'y', order: 2 },
+            {
+              type: 'line', label: 'MoM Growth %', data: DATA.monthly_growth, borderColor: A, borderWidth: 2,
+              pointBackgroundColor: A, pointRadius: 3, yAxisID: 'y2', order: 1, tension: .3
+            }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            ...DEF.plugins, legend: {
+              display: true, position: 'top',
+              labels: { color: '#8fa3bc', font: { size: 11 }, boxWidth: 10, padding: 12 }
+            }
+          },
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxRotation: 35, maxTicksLimit: 12 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' }, title: { display: true, text: 'Revenue ($M)', color: '#526070', font: { size: 10 } } },
+            y2: {
+              position: 'right', grid: { display: false }, ticks: { color: '#f5a623', font: { size: 10 }, callback: v => v + '%' },
+              title: { display: true, text: 'MoM %', color: '#f5a623', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Inventory donut ──
+    function buildInvDonut() {
+      new Chart(document.getElementById('invDonutChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical', 'Warning', 'Safe'],
+          datasets: [{
+            data: [DATA.inv_crit, DATA.inv_warn, DATA.inv_safe], backgroundColor: [R, A, T],
+            borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '62%'
+          }]
+        },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: true, position: 'bottom', labels: { color: '#8fa3bc', font: { size: 11 }, padding: 12, boxWidth: 10 } },
+            tooltip: { callbacks: { label: d => d.label + ': ' + d.raw.toLocaleString() + ' items' } }
+          }
+        }
+      });
+    }
+
+    // ── Inventory critical items table ──
+    function buildInvTable() {
+      if (!DATA.inv_table || !DATA.inv_table.length) {
+        document.getElementById('invBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#526070;padding:20px">No critical items</td></tr>';
+        return;
+      }
+      document.getElementById('invBody').innerHTML = DATA.inv_table.map(r => `
+  <tr>
+    <td>${r.rank}</td>
+    <td class="em">${r.product}</td>
+    <td>${r.cat}</td>
+    <td>${r.store}</td>
+    <td><span class="pill ${r.weeks <= 1 ? 'pill-red' : 'pill-amber'}">${r.weeks} wks</span></td>
+    <td>${r.demand} units</td>
+    <td>${r.fc12} units</td>
+    <td><span class="pill ${r.priority === 'CRITICAL' ? 'pill-red' : 'pill-amber'}">${r.priority}</span></td>
+  </tr>`).join('');
+    }
+
+    // ── Category coverage bar chart ──
+    function buildCatCovChart() {
+      const palBg = [T2 + '0.7)', B2 + '0.7)', A2 + '0.7)'];
+      const palBd = [T, B, A];
+      new Chart(document.getElementById('catCovChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.inv_cat_labels,
+          datasets: [{
+            data: DATA.inv_cat_values,
+            backgroundColor: DATA.inv_cat_labels.map((_, i) => palBg[i % palBg.length]),
+            borderColor: DATA.inv_cat_labels.map((_, i) => palBd[i % palBd.length]),
+            borderRadius: 6, borderWidth: 1
+          }]
+        },
+        options: {
+          ...DEF, indexAxis: 'y',
+          plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.raw + ' weeks avg' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, callback: v => v + ' wks' } },
+            y: { ...DEF.scales.y }
+          }
+        }
+      });
+    }
+
+    // ── Store critical items bar chart ──
+    function buildStoreCritChart() {
+      const cols = DATA.inv_store_values.map(v => v > 5 ? R : v > 2 ? A : T2 + '0.5)');
+      new Chart(document.getElementById('storeCritChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.inv_store_labels,
+          datasets: [{ data: DATA.inv_store_values, backgroundColor: cols, borderRadius: 4 }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.raw + ' critical SKUs' } } },
+          scales: {
+            x: { ...DEF.scales.x },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, stepSize: 1 } }
+          }
+        }
+      });
+    }
+
+    // ── CLV vs Churn scatter ──
+    function buildClvScatter() {
+      const datasets = Object.entries(DATA.clv_scatter).map(([name, cfg]) => ({
+        label: name,
+        data: cfg.points,
+        backgroundColor: cfg.color + 'bb', pointRadius: 5, pointHoverRadius: 7
+      }));
+      new Chart(document.getElementById('clvChart'), {
+        type: 'scatter', data: { datasets },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: true, position: 'top', labels: { color: '#8fa3bc', font: { size: 10 }, boxWidth: 8, padding: 10 } },
+            tooltip: { callbacks: { label: d => [d.dataset.label, `Churn: ${Math.round(d.raw.x * 100)}%`, `CLV: $${d.raw.y.toLocaleString()}`] } }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,.04)' }, min: 0, max: 1,
+              title: { display: true, text: 'Churn probability (higher = more likely to leave)', color: '#526070', font: { size: 10 } },
+              ticks: { color: '#526070', font: { size: 9 }, callback: v => Math.round(v * 100) + '%' }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,.04)' }, min: 0,
+              title: { display: true, text: 'Projected 12-month CLV ($)', color: '#526070', font: { size: 10 } },
+              ticks: { color: '#526070', font: { size: 9 }, callback: v => '$' + v.toLocaleString() }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Segment donut ──
+    function buildSegDonut() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      new Chart(document.getElementById('segDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: DATA.seg_data.map(s => s.label),
+          datasets: [{
+            data: DATA.seg_data.map(s => s.count),
+            backgroundColor: DATA.seg_data.map((s, i) => SC[s.label] || def[i % def.length]),
+            borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '58%'
+          }]
+        },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: false },
+            tooltip: { callbacks: { label: d => d.label + ': ' + d.raw.toLocaleString() } }
+          }
+        }
+      });
+    }
+
+    // ── Segment pills ──
+    function buildSegPills() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      const total = DATA.seg_data.reduce((a, s) => a + s.count, 0);
+      const max = DATA.seg_data[0] ? DATA.seg_data[0].count : 1;
+      document.getElementById('segPills').innerHTML = DATA.seg_data.slice(0, 5).map((s, i) => {
+        const c = SC[s.label] || def[i % def.length];
+        return `<div class="seg-pill">
+    <div class="seg-dot" style="background:${c}"></div>
+    <span class="seg-name">${s.label}</span>
+    <div class="seg-bar-wrap"><div class="seg-bar" style="width:${Math.round(s.count / max * 100)}%;background:${c}"></div></div>
+    <span class="seg-pct">${Math.round(s.count / total * 100)}%</span>
+    <span class="seg-rev">${fmtRev(s.revenue)}</span>
+  </div>`;
+      }).join('');
+    }
+
+    // ── Segment revenue bar chart ──
+    function buildSegRevChart() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      const top5 = DATA.seg_data.slice(0, 5);
+      new Chart(document.getElementById('segRevChart'), {
+        type: 'bar',
+        data: {
+          labels: top5.map(s => s.label),
+          datasets: [{
+            data: top5.map(s => Math.round(s.revenue / 1000)),
+            backgroundColor: top5.map((s, i) => (SC[s.label] || def[i % def.length]) + '99'),
+            borderColor: top5.map((s, i) => SC[s.label] || def[i % def.length]),
+            borderWidth: 1, borderRadius: 4
+          }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => '$' + d.raw + 'K' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, font: { size: 9 } } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'K' } }
+          }
+        }
+      });
+    }
+
+    // ── Model validation table ──
+    function buildModelValidation() {
+      const m = DATA.model_metrics;
+      document.getElementById('valTableBody').innerHTML = `
+  <tr>
+    <td style="color:var(--text2)">Validation 2015</td>
+    <td class="good">${m.val.r2}</td><td>${m.val.mae}</td><td>${m.val.rmse}</td>
+    <td class="warn">${m.val.mape}%</td>
+  </tr>
+  <tr class="best">
+    <td><strong>Test 2016 ★</strong></td>
+    <td class="good">${m.test.r2}</td><td>${m.test.mae}</td><td>${m.test.rmse}</td>
+    <td class="warn">${m.test.mape}%</td>
+  </tr>`;
+    }
+
+    // ── SHAP feature importance list ──
+    function buildShapList() {
+      if (!DATA.shap_data || !DATA.shap_data.length) return;
+      const max = DATA.shap_data[0].value;
+      const featureColor = f => {
+        if (f.startsWith('lag_')) return B;
+        if (f.startsWith('rolling_')) return T;
+        if (f === 'snap' || f === 'has_event' || f === 'price_vs_median_ratio') return R;
+        return A;
+      };
+      document.getElementById('shapList').innerHTML = DATA.shap_data.map(f => `
+  <div class="shap-item">
+    <span class="shap-lbl">${f.feature}</span>
+    <div class="shap-track"><div class="shap-bar" style="width:${Math.round(f.value / max * 100)}%;background:${featureColor(f.feature)}"></div></div>
+    <span class="shap-num">${f.value.toFixed(2)}</span>
+  </div>`).join('');
+    }
+
+    // ── Bootstrap everything ──
+    function init() {
+      populateKPIs();
+      buildExecFcChart();
+      buildSalesChart();
+      buildStateChart();
+      buildGrowthChart();
+      buildTopProds();
+      buildStoreDropdown();
+      buildTrendChart();
+      buildInvDonut();
+      buildInvTable();
+      buildCatCovChart();
+      buildStoreCritChart();
+      buildClvScatter();
+      buildSegDonut();
+      buildSegPills();
+      buildSegRevChart();
+      buildModelValidation();
+      buildShapList();
+      updateForecast();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>

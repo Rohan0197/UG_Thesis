@@ -1,0 +1,28 @@
+# Retail Intelligence Platform — dependencies
+# Run: pip install -r requirements.txt
+
+# Core data
+pandas==2.2.2
+numpy==1.26.4
+openpyxl==3.1.2          # reading .xlsx files (UCI Online Retail dataset)
+
+# Machine learning
+scikit-learn==1.4.2
+lightgbm==4.3.0
+shap==0.45.1              # feature importance / explainability
+
+# Hyperparameter tuning (optional — only used when TUNE=True in model.py)
+optuna==3.6.1
+
+# Probabilistic CLV model (BG/NBD + Gamma-Gamma)
+# Falls back to linear projection if not installed
+lifetimes==0.11.3
+
+# Visualisation — used by dashboard_fixed.py (Streamlit)
+plotly==5.22.0
+
+# Streamlit dashboard (optional — only needed for dashboard_fixed.py)
+streamlit==1.35.0
+
+# Utilities
+joblib==1.4.2             # model serialisation (models/lgbm_demand.pkl)

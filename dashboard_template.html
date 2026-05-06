@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Retail Intelligence — Business Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --sidebar: #0e1117;
+      --sidebar-border: #1e2530;
+      --bg: #0f1923;
+      --surface: #151f2e;
+      --surface2: #1a2537;
+      --surface3: #202d40;
+      --border: #253040;
+      --border2: #2d3d52;
+      --text: #e8eef5;
+      --text2: #8fa3bc;
+      --text3: #526070;
+      --teal: #00c4a0;
+      --teal-dim: rgba(0, 196, 160, .12);
+      --teal-mid: rgba(0, 196, 160, .25);
+      --amber: #f5a623;
+      --amber-dim: rgba(245, 166, 35, .12);
+      --red: #f04b5a;
+      --red-dim: rgba(240, 75, 90, .12);
+      --blue: #4a9eff;
+      --blue-dim: rgba(74, 158, 255, .12);
+      --purple: #a78bfa;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--sidebar);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--teal);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -.2px;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+      letter-spacing: .04em;
+    }
+
+    .sidebar-section {
+      padding: 18px 10px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text3);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      margin: 1px 4px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 400;
+      transition: all .15s;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border-color: rgba(0, 196, 160, .2);
+      font-weight: 500;
+    }
+
+    .nav-icon {
+      font-size: 15px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-alert {
+      margin-left: auto;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 12px;
+      border-top: 1px solid var(--sidebar-border);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--teal);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    .status-text {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .page {
+      display: none;
+      padding: 28px 28px 40px;
+      animation: fadeIn .2s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -.4px;
+      margin-bottom: 3px;
+    }
+
+    .page-desc {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .page-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .last-updated {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+      background: var(--surface2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── GRID ── */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-31 {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-13 {
+      display: grid;
+      grid-template-columns: 1fr 3fr;
+      gap: 14px;
+    }
+
+    .grid-12 {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 14px;
+    }
+
+    .grid-21 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-211 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+
+    .card-sm {
+      padding: 14px 16px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 2px;
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 14px;
+    }
+
+    .card-action {
+      font-size: 11px;
+      color: var(--teal);
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .kpi-teal::after {
+      background: var(--teal);
+    }
+
+    .kpi-amber::after {
+      background: var(--amber);
+    }
+
+    .kpi-red::after {
+      background: var(--red);
+    }
+
+    .kpi-blue::after {
+      background: var(--blue);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -.5px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .kpi-value span {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text2);
+    }
+
+    .kpi-change {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .kpi-meta {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .up {
+      color: var(--teal)
+    }
+
+    .dn {
+      color: var(--red)
+    }
+
+    .na {
+      color: var(--text3)
+    }
+
+    /* ── ALERT BANNER ── */
+    .alert-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid;
+    }
+
+    .alert-banner.red {
+      background: var(--red-dim);
+      border-color: rgba(240, 75, 90, .3);
+    }
+
+    .alert-banner.amber {
+      background: var(--amber-dim);
+      border-color: rgba(245, 166, 35, .3);
+    }
+
+    .alert-banner.teal {
+      background: var(--teal-dim);
+      border-color: rgba(0, 196, 160, .3);
+    }
+
+    .ab-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .ab-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .ab-title.red {
+      color: #f77;
+    }
+
+    .ab-title.amber {
+      color: #ffc46a;
+    }
+
+    .ab-title.teal {
+      color: var(--teal);
+    }
+
+    .ab-sub {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    .ab-val {
+      margin-left: auto;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .ab-val.red {
+      color: #f77;
+    }
+
+    .ab-val.amber {
+      color: #ffc46a;
+    }
+
+    .ab-val.teal {
+      color: var(--teal);
+    }
+
+    /* ── TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .data-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: var(--surface2);
+    }
+
+    .data-table .em {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .pill-red {
+      background: var(--red-dim);
+      color: #f77;
+      border: 1px solid rgba(240, 75, 90, .3);
+    }
+
+    .pill-amber {
+      background: var(--amber-dim);
+      color: #ffc46a;
+      border: 1px solid rgba(245, 166, 35, .3);
+    }
+
+    .pill-teal {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid rgba(0, 196, 160, .3);
+    }
+
+    .pill-blue {
+      background: var(--blue-dim);
+      color: var(--blue);
+      border: 1px solid rgba(74, 158, 255, .3);
+    }
+
+    .pill-purple {
+      background: rgba(167, 139, 250, .12);
+      color: var(--purple);
+      border: 1px solid rgba(167, 139, 250, .3);
+    }
+
+    /* ── PROGRESS ── */
+    .prog {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .prog-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .prog-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .prog-label {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .prog-val {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── STAT ROW ── */
+    .stat-row {
+      display: flex;
+      gap: 0;
+      border-top: 1px solid var(--border);
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .stat-value {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* ── SEG PILL ── */
+    .seg-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      margin-bottom: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .seg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .seg-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .seg-bar-wrap {
+      width: 80px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .seg-bar {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .seg-pct {
+      font-size: 11px;
+      color: var(--text3);
+      width: 32px;
+      text-align: right;
+    }
+
+    .seg-rev {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      width: 60px;
+      text-align: right;
+    }
+
+    /* ── ACTION CARD ── */
+    .action-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .action-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .action-desc {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.5;
+    }
+
+    .action-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-top: 6px;
+    }
+
+    /* ── INSIGHT CHIP ── */
+    .insight-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .insight {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .insight::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── METRIC NOTE ── */
+    .metric-note {
+      background: var(--amber-dim);
+      border: 1px solid rgba(245, 166, 35, .25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #ffc46a;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .metric-note strong {
+      color: #ffd17a;
+    }
+
+    /* ── SHAP LIST ── */
+    .shap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .shap-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shap-lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      width: 155px;
+      flex-shrink: 0;
+    }
+
+    .shap-track {
+      flex: 1;
+      height: 7px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .shap-bar {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .shap-num {
+      font-size: 11px;
+      color: var(--text3);
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── VALIDATION TABLE ── */
+    .val-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .val-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .val-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+
+    .val-table tr.best td {
+      background: rgba(0, 196, 160, .06);
+      color: var(--text);
+    }
+
+    .good {
+      color: var(--teal);
+      font-weight: 600;
+    }
+
+    .warn {
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    /* ── CANVAS WRAPPERS ── */
+    .chart-wrap {
+      position: relative;
+    }
+
+    /* ── SELECTS ── */
+    .ctrl-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--teal);
+    }
+
+    .ctrl-label {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── Forecast range selector buttons ── */
+    .range-btns { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0 10px; }
+    .range-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      border-radius: 4px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .range-btn:hover  { border-color: var(--teal); color: var(--teal); }
+    .range-btn.active { background: var(--teal); border-color: var(--teal); color: #0d1521; font-weight:600; }
+    .range-btn.reset  { margin-left:auto; }
+    .range-btn.reset:hover { border-color:#f5a623; color:#f5a623; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">📦</div>
+        <div>
+          <div class="brand-name">RetailIQ</div>
+        </div>
+      </div>
+      <div class="brand-sub">BUSINESS INTELLIGENCE PLATFORM</div>
+    </div>
+
+    <div class="sidebar-section">Overview</div>
+    <div class="nav-item active" onclick="nav('exec')">
+      <span class="nav-icon">⬛</span> Executive Summary
+    </div>
+
+    <div class="sidebar-section">Operations</div>
+    <div class="nav-item" onclick="nav('forecast')">
+      <span class="nav-icon">📈</span> Demand Forecast
+    </div>
+    <div class="nav-item" onclick="nav('inventory')">
+      <span class="nav-icon">📦</span> Inventory Intelligence
+      <span class="nav-alert" id="inv-badge">—</span>
+    </div>
+
+    <div class="sidebar-section">Customers</div>
+    <div class="nav-item" onclick="nav('customers')">
+      <span class="nav-icon">👥</span> Customer Intelligence
+    </div>
+
+    <div class="sidebar-section">Model</div>
+    <div class="nav-item" onclick="nav('model')">
+      <span class="nav-icon">🤖</span> Model Validation
+    </div>
+
+    <div class="sidebar-footer">
+      <div><span class="status-dot"></span><span class="status-text">Pipeline: last run Apr 2016</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">M5 Walmart · UCI Online Retail</div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════ PAGES ══════════════════════ -->
+  <main class="main">
+
+    <!-- ████████████████ PAGE 1: EXECUTIVE SUMMARY ████████████████ -->
+    <div class="page active" id="page-exec">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Executive Summary</div>
+          <div class="page-desc">Business health at a glance — revenue, forecast accuracy, customer value and
+            operational alerts</div>
+        </div>
+        <div class="last-updated">📅 Data through May 2016</div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid-4">
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value" id="kpi-total-rev">—</div>
+          <div class="kpi-change up" id="kpi-wow">—</div>
+          <div class="kpi-meta">10 stores · Jan 2011 – May 2016</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Forecast Accuracy</div>
+          <div class="kpi-value"><span id="kpi-r2">—</span><span> R²</span></div>
+          <div class="kpi-change up">● Reliable — act on forecasts</div>
+          <div class="kpi-meta">LightGBM · held-out 2016 test data</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Avg Customer CLV</div>
+          <div class="kpi-value" id="kpi-avg-clv">—</div>
+          <div class="kpi-change na" id="kpi-n-customers">— customers · 12-month projection</div>
+          <div class="kpi-meta" id="kpi-clv-model">— model · UK retail</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="kpi-label">Revenue at Risk</div>
+          <div class="kpi-value" id="kpi-rev-risk">—</div>
+          <div class="kpi-change dn" id="kpi-churn-count">— customers at high churn risk</div>
+          <div class="kpi-meta">Requires immediate retention action</div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:22px">Operational Alerts — Items Needing Action Today</div>
+      <div class="grid-3">
+        <div>
+          <div class="alert-banner red">
+            <div class="ab-icon">🔴</div>
+            <div>
+              <div class="ab-title red">Critical Stock Shortage</div>
+              <div class="ab-sub">Products with ≤ 2 weeks supply remaining</div>
+            </div>
+            <div class="ab-val red" id="ab-inv-crit">—</div>
+          </div>
+          <div class="alert-banner amber">
+            <div class="ab-icon">🟡</div>
+            <div>
+              <div class="ab-title amber">Stock Warning</div>
+              <div class="ab-sub">Products with 3–4 weeks supply — plan reorder</div>
+            </div>
+            <div class="ab-val amber" id="ab-inv-warn">—</div>
+          </div>
+          <div class="alert-banner teal">
+            <div class="ab-icon">🟢</div>
+            <div>
+              <div class="ab-title teal">Safe Coverage</div>
+              <div class="ab-sub">Products with &gt;4 weeks supply on hand</div>
+            </div>
+            <div class="ab-val teal" id="ab-inv-safe">—</div>
+          </div>
+        </div>
+        <div>
+          <div class="alert-banner red">
+            <div class="ab-icon">⚠</div>
+            <div>
+              <div class="ab-title red">High Churn Risk Customers</div>
+              <div class="ab-sub">High/Critical probability of not returning</div>
+            </div>
+            <div class="ab-val red" id="ab-churn-high">—</div>
+          </div>
+          <div class="alert-banner amber">
+            <div class="ab-icon">📉</div>
+            <div>
+              <div class="ab-title amber">At-Risk Segment Revenue</div>
+              <div class="ab-sub">Projected CLV of churn-risk customers</div>
+            </div>
+            <div class="ab-val amber" id="ab-rev-risk">—</div>
+          </div>
+          <div class="alert-banner teal">
+            <div class="ab-icon">🏆</div>
+            <div>
+              <div class="ab-title teal">Champions Segment</div>
+              <div class="ab-sub">Highest RFM score — protect and reward</div>
+            </div>
+            <div class="ab-val teal" id="ab-champions">—</div>
+          </div>
+        </div>
+        <div>
+          <div class="card card-sm" style="height:100%">
+            <div class="card-title">12-Week Revenue Forecast</div>
+            <div class="card-sub">Projected across all 10 stores · all categories</div>
+            <div class="chart-wrap" style="height:150px">
+              <canvas id="execFcChart" role="img" aria-label="12-week forecast revenue bar chart"></canvas>
+            </div>
+            <div class="stat-row">
+              <div class="stat-item">
+                <div class="stat-label">Avg/Week</div>
+                <div class="stat-value" id="exec-avg-wk">—</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Peak Week</div>
+                <div class="stat-value" id="exec-peak-wk">—</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="exec-fc-total">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Revenue Performance — M5 Walmart Dataset · 10 Stores</div>
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">Weekly Revenue — Actual vs Forecast</div>
+          <div class="card-sub">Last 52 weeks actual sales (top 200 modelled products) · 12-week LightGBM forward
+            forecast · shaded band = ±10% forecast range</div>
+          <div class="range-btns">
+            <span style="color:var(--text3);font-size:11px;margin-right:2px">View:</span>
+            <button class="range-btn"        id="rb-4"   onclick="setSalesView(16)">4W</button>
+            <button class="range-btn"        id="rb-13"  onclick="setSalesView(25)">13W</button>
+            <button class="range-btn"        id="rb-26"  onclick="setSalesView(38)">26W</button>
+            <button class="range-btn active" id="rb-all" onclick="setSalesView(0)">All</button>
+            <button class="range-btn reset"  onclick="resetSalesZoom()">&#8635; Reset zoom</button>
+          </div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="salesChart" role="img" aria-label="Weekly revenue trend with 12-week forecast"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Revenue by State</div>
+            <div class="card-sub">Full history · all stores</div>
+            <div class="chart-wrap" style="height:120px">
+              <canvas id="stateChart" role="img" aria-label="Revenue by state donut chart"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#00c4a0;display:inline-block"></span>CA <span
+                  id="leg-ca">—</span>%</span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#4a9eff;display:inline-block"></span>TX <span
+                  id="leg-tx">—</span>%</span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span
+                  style="width:8px;height:8px;border-radius:50%;background:#f5a623;display:inline-block"></span>WI <span
+                  id="leg-wi">—</span>%</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Monthly Growth Rate</div>
+            <div class="card-sub">Month-on-month revenue change %</div>
+            <div class="chart-wrap" style="height:100px">
+              <canvas id="growthSparkChart" role="img" aria-label="Monthly growth sparkline"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 2: DEMAND FORECAST ████████████████ -->
+    <div class="page" id="page-forecast">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Demand Forecast</div>
+          <div class="page-desc">12-week forward predictions by store and category — use these to plan purchasing,
+            staffing and promotions</div>
+        </div>
+        <div class="last-updated" id="fc-last-updated">Model R² = — · Test 2016</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Model Accuracy (R²)</div>
+          <div class="kpi-value" id="fc-kpi-r2">—</div>
+          <div class="kpi-change up">● High confidence — forecasts are actionable</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Products Forecasted</div>
+          <div class="kpi-value">200</div>
+          <div class="kpi-change na">Top 200 by revenue · 10 stores each</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Forecast Horizon</div>
+          <div class="kpi-value">12<span> weeks</span></div>
+          <div class="kpi-change na">Weekly granularity · store + category level</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Strongest Driver</div>
+          <div class="kpi-value" style="font-size:18px" id="fc-top-feature">—</div>
+          <div class="kpi-change na">Last week's sales predicts next week best</div>
+        </div>
+      </div>
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">Store:</span>
+        <select id="fcStore" onchange="updateForecast()"></select>
+        <span class="ctrl-label" style="margin-left:8px">Category:</span>
+        <select id="fcCat" onchange="updateForecast()"></select>
+      </div>
+
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">12-Week Demand Forecast</div>
+          <div class="card-sub">Units per week · ±15% band shown · use peak weeks for stock planning</div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="fcMainChart" role="img"
+              aria-label="12-week demand forecast bar chart with uncertainty bands"></canvas>
+          </div>
+          <div class="stat-row" id="fcStats">
+            <div class="stat-item">
+              <div class="stat-label">Avg Units/Week</div>
+              <div class="stat-value" id="fcAvg">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Peak Week</div>
+              <div class="stat-value" id="fcPeak">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">12-Wk Revenue</div>
+              <div class="stat-value" id="fcRev">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Model MAE</div>
+              <div class="stat-value" id="fcMae">— units</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Top 5 Products — Forecast Revenue</div>
+            <div class="card-sub">Next 12 weeks · all stores · highest projected revenue</div>
+            <div id="topProds" style="margin-top:8px"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Business Implications</div>
+            <div class="card-sub">What to do with these forecasts</div>
+            <div class="insight-row">
+              <div class="insight">Stock peak-week inventory <strong>2 weeks in advance</strong> using peak week
+                forecast as the target</div>
+              <div class="insight">SNAP payment days (1st/15th of month) drive <strong>FOODS demand spikes</strong> —
+                plan promotions accordingly</div>
+              <div class="insight">Q4 uplift visible in all stores — begin <strong>seasonal ordering in
+                  September</strong></div>
+              <div class="insight">80% interval width indicates forecast confidence — <strong>narrow band = high
+                  confidence</strong></div>
+              <div class="insight">California stores account for <span id="insight-ca-pct">—</span>% of revenue —
+                prioritise stock allocation there first</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Revenue Trend — Monthly View</div>
+      <div class="card">
+        <div class="card-title">Monthly Revenue + Month-on-Month Growth</div>
+        <div class="card-sub">Bar = monthly revenue · line = MoM growth % · use this to identify seasonality and growth
+          periods</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="trendChart" role="img" aria-label="Monthly revenue trend with growth rate overlay"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 3: INVENTORY ████████████████ -->
+    <div class="page" id="page-inventory">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Inventory Intelligence</div>
+          <div class="page-desc">Stock coverage analysis — identify what needs immediate reorder vs what is safe</div>
+        </div>
+        <div class="last-updated">⚠ Stock estimated from sales velocity — not live WMS</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-red">
+          <div class="kpi-label">Critical — Reorder Now</div>
+          <div class="kpi-value"><span id="inv-kpi-crit">—</span><span> SKUs</span></div>
+          <div class="kpi-change dn">≤ 2 weeks of stock remaining</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Warning — Plan Reorder</div>
+          <div class="kpi-value"><span id="inv-kpi-warn">—</span><span> SKUs</span></div>
+          <div class="kpi-change na">3–4 weeks of stock remaining</div>
+        </div>
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Safe Coverage</div>
+          <div class="kpi-value"><span id="inv-kpi-safe">—</span><span> SKUs</span></div>
+          <div class="kpi-change up" id="inv-kpi-cov-pct">—% of inventory is safe</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Total SKUs Tracked</div>
+          <div class="kpi-value" id="inv-kpi-total">—</div>
+          <div class="kpi-change na">200 products × 10 stores</div>
+        </div>
+      </div>
+
+      <div class="grid-12">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Stock Coverage Distribution</div>
+            <div class="card-sub">Weeks-to-stockout across all SKUs</div>
+            <div class="chart-wrap" style="height:160px">
+              <canvas id="invDonutChart" role="img" aria-label="Inventory status donut chart"></canvas>
+            </div>
+            <div style="margin-top:14px">
+              <div class="prog-row"><span class="prog-label"><span style="color:#f77">●</span> Critical</span><span
+                  class="prog-val" style="color:#f77" id="inv-prog-crit-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-crit" style="width:0%;background:#f04b5a"></div>
+              </div>
+              <div class="prog-row" style="margin-top:8px"><span class="prog-label"><span style="color:#ffc46a">●</span>
+                  Warning</span><span class="prog-val" style="color:#ffc46a" id="inv-prog-warn-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-warn" style="width:0%;background:#f5a623"></div>
+              </div>
+              <div class="prog-row" style="margin-top:8px"><span class="prog-label"><span
+                    style="color:var(--teal)">●</span> Safe</span><span class="prog-val" style="color:var(--teal)"
+                  id="inv-prog-safe-pct">—%</span></div>
+              <div class="prog">
+                <div class="prog-fill" id="inv-prog-safe" style="width:0%;background:#00c4a0"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Reorder Priority Framework</div>
+            <div class="card-sub">How to act on these numbers</div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f77">🔴 Today — Critical Items</div>
+              <div class="action-desc">Place emergency purchase orders for all critical SKUs. Use the 12-week forecast
+                to size order quantity. Prioritise FOODS category — highest demand velocity.</div>
+              <span class="action-tag" id="action-crit-tag" style="background:var(--red-dim);color:#f77">— items ·
+                immediate</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#ffc46a">🟡 This Week — Warning Items</div>
+              <div class="action-desc">Schedule reorders for warning SKUs within 7 days. Lead time + safety buffer
+                should target 8+ weeks of stock on reorder.</div>
+              <span class="action-tag" id="action-warn-tag" style="background:var(--amber-dim);color:#ffc46a">— items ·
+                plan now</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:var(--teal)">🟢 Monthly — Safe Items</div>
+              <div class="action-desc">Review safe items monthly. Use forecast trends to identify seasonal uplift
+                requirements 6–8 weeks ahead.</div>
+              <span class="action-tag" id="action-safe-tag" style="background:var(--teal-dim);color:var(--teal)">— items
+                · monitor</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Critical Items — Immediate Reorder Required</div>
+          <div class="card-sub">Sorted by weeks-to-stockout ascending · use forecast column to size reorder quantity
+          </div>
+          <table class="data-table" id="invTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Store</th>
+                <th>Weeks Left</th>
+                <th>Avg Wkly Demand</th>
+                <th>12-Wk Forecast</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-label">Stock Coverage by Category and Store</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Coverage by Product Category</div>
+          <div class="card-sub">Average weeks-to-stockout per category</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="catCovChart" role="img" aria-label="Category coverage bar chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Critical Items by Store</div>
+          <div class="card-sub">Number of SKUs at critical stock level per store</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="storeCritChart" role="img" aria-label="Critical items per store bar chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 4: CUSTOMERS ████████████████ -->
+    <div class="page" id="page-customers">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Customer Intelligence</div>
+          <div class="page-desc">RFM segmentation · customer lifetime value · churn risk — UCI Online Retail dataset ·
+            UK e-commerce · <span id="cust-n-total">—</span> customers</div>
+        </div>
+        <div class="last-updated">🟢 UCI Online Retail dataset · separate from M5</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="kpi kpi-teal">
+          <div class="kpi-label">Champions</div>
+          <div class="kpi-value" id="cust-kpi-champ">—</div>
+          <div class="kpi-change up" id="cust-kpi-champ-pct">—% of customers · highest value</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-label">Avg 12-Month CLV</div>
+          <div class="kpi-value" id="cust-kpi-clv">—</div>
+          <div class="kpi-change na" id="cust-clv-model-note">— model</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="kpi-label">High/Critical Churn</div>
+          <div class="kpi-value" id="cust-kpi-churn">—</div>
+          <div class="kpi-change dn" id="cust-kpi-churn-pct">—% of customers at risk</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-label">Revenue at Risk</div>
+          <div class="kpi-value" id="cust-kpi-risk">—</div>
+          <div class="kpi-change dn">Projected CLV of churn-risk customers</div>
+        </div>
+      </div>
+
+      <div class="grid-211">
+        <div class="card">
+          <div class="card-title">CLV vs Churn Risk — Retention Priority Map</div>
+          <div class="card-sub">Top-right = high value + high churn risk → priority retention targets</div>
+          <div
+            style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:10px;line-height:1.6">
+            <strong style="color:var(--text2)">How to use this:</strong> Focus retention budget on customers in the
+            <strong style="color:#f77">top-right quadrant</strong> — they have the highest lifetime value and the
+            highest probability of leaving. Bottom-left customers can be deprioritised.
+          </div>
+          <div class="chart-wrap" style="height:270px">
+            <canvas id="clvChart" role="img"
+              aria-label="CLV vs churn risk scatter plot with customer segments coloured"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Customer Segments</div>
+            <div class="card-sub">RFM scoring · 8 segments</div>
+            <div class="chart-wrap" style="height:140px">
+              <canvas id="segDonut" role="img" aria-label="Customer segment donut chart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Segment Breakdown</div>
+            <div id="segPills" style="margin-top:6px"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Segment Actions</div>
+            <div class="card-sub">What to do per segment</div>
+            <div class="action-card">
+              <div class="action-title" style="color:#00c4a0">Champions (<span id="act-champions">—</span>)</div>
+              <div class="action-desc">Reward with loyalty programme. Ask for referrals. Early product access.</div>
+              <span class="action-tag" style="background:var(--teal-dim);color:var(--teal)">Retain &amp; reward</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f5a623">At Risk (<span id="act-at-risk">—</span>)</div>
+              <div class="action-desc">Send personalised win-back email. Offer discount. Survey for dissatisfaction
+                reason.</div>
+              <span class="action-tag" style="background:var(--amber-dim);color:#ffc46a">Win back</span>
+            </div>
+            <div class="action-card">
+              <div class="action-title" style="color:#f77">Lost (<span id="act-lost">—</span>)</div>
+              <div class="action-desc">Low-cost re-engagement campaign. Accept attrition if CAC exceeds projected CLV.
+              </div>
+              <span class="action-tag" style="background:var(--red-dim);color:#f77">Re-engage or accept</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Revenue by Segment</div>
+            <div class="card-sub">Historical revenue contribution</div>
+            <div class="chart-wrap" style="height:120px">
+              <canvas id="segRevChart" role="img" aria-label="Revenue by customer segment bar chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████████████ PAGE 5: MODEL VALIDATION ████████████████ -->
+    <div class="page" id="page-model">
+      <div class="page-header-row">
+        <div class="page-header">
+          <div class="page-title">Model Validation</div>
+          <div class="page-desc">Can you trust the forecasts? Walk-forward validation, SHAP explainability and
+            methodology rationale</div>
+        </div>
+        <div class="last-updated">LightGBM · walk-forward CV · no data leakage</div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-title">Walk-Forward Validation Results</div>
+          <div class="card-sub">Train 2011–2014 → Validation 2015 → Test 2016 · strictly no future data used in training
+          </div>
+          <table class="val-table" style="margin-top:8px">
+            <thead>
+              <tr>
+                <th>Split</th>
+                <th>R²</th>
+                <th>MAE (units)</th>
+                <th>RMSE</th>
+                <th>MAPE *</th>
+              </tr>
+            </thead>
+            <tbody id="valTableBody"></tbody>
+          </table>
+          <div class="metric-note">
+            <strong>* Why is MAPE 37–44%?</strong> MAPE is computed only on weeks with non-zero demand.
+            The dataset contains many low-volume product-store pairs with sporadic demand —
+            these inflate MAPE even when the model is accurate on high-volume items.
+            <strong>R² on held-out 2016 data is the primary quality indicator and means the model explains 91% of demand
+              variance.</strong>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">SHAP Feature Importance</div>
+          <div class="card-sub">Mean absolute SHAP value — what drives each forecast · sampled 5,000 test rows</div>
+          <div class="shap-list" id="shapList"></div>
+          <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#4a9eff;border-radius:2px;display:inline-block"></span>Lag
+              features</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#00c4a0;border-radius:2px;display:inline-block"></span>Rolling
+              stats</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f04b5a;border-radius:2px;display:inline-block"></span>Events</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f5a623;border-radius:2px;display:inline-block"></span>Trend/calendar</span>
+            <span style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px"><span
+                style="width:8px;height:8px;background:#f04b5a;border-radius:2px;display:inline-block"></span>Elasticity</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Model Architecture Decisions</div>
+          <div class="card-sub">Why each choice was made — for stakeholder transparency</div>
+          <div class="insight-row" style="margin-top:8px">
+            <div class="insight"><strong style="color:var(--text)">LightGBM with MAE loss</strong> — Retail demand has
+              extreme outliers (promotions, events). MAE loss is robust to these; MSE would overfit to spikes.</div>
+            <div class="insight"><strong style="color:var(--text)">Walk-forward cross-validation</strong> — No
+              look-ahead bias. Train on past, predict future, exactly as in production deployment.</div>
+            <div class="insight"><strong style="color:var(--text)">Top 200 products only</strong> — Covers ~80%+ of
+              revenue. Training on all 3,000+ products would be intractable and add noise from negligible items.</div>
+            <div class="insight"><strong style="color:var(--text)">Quantile models (α=0.1, 0.9)</strong> — Three models
+              trained: point forecast + 80% prediction interval bounds. This replaces the naive ±MAE band with
+              statistically valid uncertainty.</div>
+            <div class="insight"><strong style="color:var(--text)">lag_52 (annual seasonality)</strong> — Confirmed by
+              SHAP. Walmart retail has strong yearly patterns. Without this, the model underestimates Q4 uplift.</div>
+            <div class="insight"><strong style="color:var(--text)">SNAP days as a binary feature</strong> — Government
+              food stamp payment days cause a measurable spike in FOODS demand. SHAP rank 3 confirms this signal.</div>
+            <div class="insight"><strong style="color:var(--text)">price_vs_median_ratio</strong> — New feature: item
+              price relative to its own 8-week median. Captures relative elasticity not captured by raw price_change.
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Customer Intelligence Methodology</div>
+            <div class="card-sub">How CLV and churn scores are computed</div>
+            <div class="insight-row" style="margin-top:6px">
+              <div class="insight"><strong style="color:var(--text)">RFM Segmentation</strong> — Quintile scoring on
+                Recency, Frequency and Monetary value. 8 rule-based segments derived from score combinations.</div>
+              <div class="insight"><strong style="color:var(--text)">BG/NBD + Gamma-Gamma CLV</strong> — Probabilistic
+                model fitted per customer. Predicts expected purchases and spend in next 12 months accounting for the
+                probability the customer is already "dead" (churned).</div>
+              <div class="insight"><strong style="color:var(--text)">Logistic Regression Churn</strong> — 5-fold
+                cross-validated binary classifier on R, F, M scores. Outputs calibrated probability (0–1), not a
+                heuristic score.</div>
+              <div class="insight"><strong style="color:var(--text)">K-Means Clustering (k=4)</strong> — Validated with
+                elbow method and silhouette score. 4 clusters correspond to High, Mid, Low value and Inactive customer
+                tiers.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Data Sources</div>
+            <div class="card-sub">Two independent datasets combined into one platform</div>
+            <table class="data-table" style="margin-top:6px">
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th>Used for</th>
+                  <th>Scale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="em">M5 Walmart</td>
+                  <td>Demand forecasting · inventory</td>
+                  <td>10 stores · 2011–2016</td>
+                </tr>
+                <tr>
+                  <td class="em">UCI Online Retail</td>
+                  <td>Customer intelligence · CLV</td>
+                  <td><span id="model-n-customers">—</span> customers · UK</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════ SCRIPTS ══════════════════════ -->
+  <script>
+    const DATA = __DATA_PLACEHOLDER__;
+
+    const T = '#00c4a0', A = '#f5a623', R = '#f04b5a', B = '#4a9eff', P = '#a78bfa', G = '#526070';
+    const T2 = 'rgba(0,196,160,', A2 = 'rgba(245,166,35,', R2 = 'rgba(240,75,90,', B2 = 'rgba(74,158,255,';
+
+    // ── Helpers ──
+    function set(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+    function fmtRev(v) {
+      if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+      if (v >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+      if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+      return '$' + v.toFixed(0);
+    }
+
+    // ── Navigation ──
+    function nav(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + id).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // ── Chart defaults ──
+    const DEF = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {} } },
+      elements: { point: { radius: 0 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#526070', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#526070', font: { size: 10 } } }
+      }
+    };
+
+    // ── Populate all KPIs and static text ──
+    function populateKPIs() {
+      // Executive summary
+      set('kpi-total-rev', fmtRev(DATA.total_rev));
+      const wowEl = document.getElementById('kpi-wow');
+      if (wowEl) {
+        const sign = DATA.wow >= 0 ? '▲' : '▼';
+        wowEl.textContent = sign + ' ' + Math.abs(DATA.wow).toFixed(1) + '% week-on-week';
+        wowEl.className = 'kpi-change ' + (DATA.wow >= 0 ? 'up' : 'dn');
+      }
+      set('kpi-r2', DATA.model_metrics.test.r2.toFixed(4));
+      set('kpi-avg-clv', fmtRev(DATA.avg_clv));
+      set('kpi-n-customers', DATA.n_customers.toLocaleString() + ' customers · 12-month projection');
+      set('kpi-clv-model', DATA.clv_model_used + ' · UK retail');
+      set('kpi-rev-risk', fmtRev(DATA.rev_at_risk));
+      set('kpi-churn-count', '▼ ' + DATA.n_churn_high.toLocaleString() + ' customers at high churn risk');
+
+      // Alert banners
+      set('ab-inv-crit', DATA.inv_crit + ' SKUs');
+      set('ab-inv-warn', DATA.inv_warn + ' SKUs');
+      set('ab-inv-safe', DATA.inv_safe.toLocaleString() + ' SKUs');
+      set('ab-churn-high', DATA.n_churn_high.toLocaleString());
+      set('ab-rev-risk', fmtRev(DATA.rev_at_risk));
+      set('ab-champions', DATA.n_champions.toLocaleString());
+
+      // Exec forecast stats
+      set('exec-avg-wk', fmtRev(DATA.fc_avg_weekly));
+      set('exec-peak-wk', 'W' + DATA.fc_peak_week);
+      set('exec-fc-total', fmtRev(DATA.fc_total_12w));
+
+      // State legend
+      set('leg-ca', DATA.ca_pct);
+      set('leg-tx', DATA.tx_pct);
+      set('leg-wi', DATA.wi_pct);
+
+      // Sidebar badge
+      set('inv-badge', DATA.inv_crit);
+
+      // Forecast page
+      set('fc-kpi-r2', DATA.model_metrics.test.r2.toFixed(4));
+      set('fc-last-updated', 'Model R² = ' + DATA.model_metrics.test.r2.toFixed(4) + ' · Test 2016');
+      if (DATA.shap_data && DATA.shap_data.length) set('fc-top-feature', DATA.shap_data[0].feature + ' SHAP');
+      set('insight-ca-pct', DATA.ca_pct);
+
+      // Inventory page
+      set('inv-kpi-crit', DATA.inv_crit);
+      set('inv-kpi-warn', DATA.inv_warn);
+      set('inv-kpi-safe', DATA.inv_safe.toLocaleString());
+      set('inv-kpi-total', DATA.inv_total.toLocaleString());
+      const critPct = (DATA.inv_crit / DATA.inv_total * 100).toFixed(1);
+      const warnPct = (DATA.inv_warn / DATA.inv_total * 100).toFixed(1);
+      const safePct = DATA.inv_cov.toFixed(1);
+      set('inv-kpi-cov-pct', safePct + '% of inventory is safe');
+      set('inv-prog-crit-pct', critPct + '%');
+      set('inv-prog-warn-pct', warnPct + '%');
+      set('inv-prog-safe-pct', safePct + '%');
+      const setW = (id, w) => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; };
+      setW('inv-prog-crit', critPct); setW('inv-prog-warn', warnPct); setW('inv-prog-safe', safePct);
+      set('action-crit-tag', DATA.inv_crit + ' items · immediate');
+      set('action-warn-tag', DATA.inv_warn + ' items · plan now');
+      set('action-safe-tag', DATA.inv_safe.toLocaleString() + ' items · monitor');
+
+      // Customer page
+      set('cust-n-total', DATA.n_customers.toLocaleString());
+      set('cust-kpi-champ', DATA.n_champions.toLocaleString());
+      set('cust-kpi-champ-pct', (DATA.n_champions / DATA.n_customers * 100).toFixed(0) + '% of customers · highest value');
+      set('cust-kpi-clv', fmtRev(DATA.avg_clv));
+      set('cust-clv-model-note', DATA.clv_model_used + ' model');
+      set('cust-kpi-churn', DATA.n_churn_high.toLocaleString());
+      set('cust-kpi-churn-pct', (DATA.n_churn_high / DATA.n_customers * 100).toFixed(1) + '% of customers at risk');
+      set('cust-kpi-risk', fmtRev(DATA.rev_at_risk));
+
+      // Segment action card counts
+      const champSeg = DATA.seg_data.find(s => s.label === 'Champions');
+      const atRiskSeg = DATA.seg_data.find(s => s.label === 'At risk');
+      const lostSeg = DATA.seg_data.find(s => s.label === 'Lost');
+      if (champSeg) set('act-champions', champSeg.count.toLocaleString());
+      if (atRiskSeg) set('act-at-risk', atRiskSeg.count.toLocaleString());
+      if (lostSeg) set('act-lost', lostSeg.count.toLocaleString());
+
+      // Model page
+      set('model-n-customers', DATA.n_customers.toLocaleString());
+    }
+
+    // ── Exec 12-week forecast sparkline ──
+    function buildExecFcChart() {
+      const vals = DATA.fc_all_values.map(v => parseFloat((v / 1e6).toFixed(2)));
+      const peak = DATA.fc_peak_week - 1;
+      new Chart(document.getElementById('execFcChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.fc_all_labels, datasets: [{
+            data: vals,
+            backgroundColor: vals.map((_, i) => i === peak ? T : T2 + '0.4)'),
+            borderColor: vals.map((_, i) => i === peak ? T : 'transparent'),
+            borderWidth: 1, borderRadius: 4
+          }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => '$' + d.raw + 'M' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 6 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' } }
+          }
+        }
+      });
+    }
+
+    // ── Weekly sales + forecast chart ──
+    // ── Sales chart state — exposed so range buttons and resetZoom can reach them ──
+    let _salesChart = null;
+    let _salesFull  = null;
+
+    function buildSalesChart() {
+      const actualVals = DATA.weekly_values.map(v => parseFloat((v / 1e6).toFixed(3)));
+      const fcVals = DATA.fc_all_values.map(v => parseFloat((v / 1e6).toFixed(3)));
+      const fcHi = fcVals.map(v => parseFloat((v * 1.1).toFixed(3)));
+      const fcLo = fcVals.map(v => parseFloat((v * 0.9).toFixed(3)));
+      const allLabels = [...DATA.weekly_labels, ...DATA.fc_all_labels];
+      const n = actualVals.length;
+      const actData = [...actualVals, ...Array(fcVals.length).fill(null)];
+      const fcd = [...Array(n).fill(null), ...fcVals];
+      const hiD = [...Array(n).fill(null), ...fcHi];
+      const loD = [...Array(n).fill(null), ...fcLo];
+      _salesFull = { labels: allLabels, act: actData, fc: fcd, hi: hiD, lo: loD };
+      _salesChart = new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+          labels: allLabels, datasets: [
+            {
+              label: 'Actual', data: actData, borderColor: B, borderWidth: 2, fill: true,
+              backgroundColor: B2 + '0.06)', pointRadius: 0, tension: .3
+            },
+            {
+              label: 'Forecast', data: fcd, borderColor: T, borderWidth: 2, borderDash: [5, 4], fill: true,
+              backgroundColor: T2 + '0.05)', pointRadius: 3, pointBackgroundColor: T, pointStyle: 'diamond', tension: .3
+            },
+            { label: 'Upper', data: hiD, borderColor: 'transparent', backgroundColor: T2 + '0.08)', fill: '+1', pointRadius: 0 },
+            { label: 'Lower', data: loD, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            zoom: {
+              zoom:   { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+              pan:    { enabled: true, mode: 'x' },
+              limits: { x: { minRange: 4 } }
+            },
+            ...DEF.plugins, legend: {
+              display: true, position: 'top',
+              labels: {
+                color: '#8fa3bc', font: { size: 11 }, boxWidth: 10, padding: 12,
+                filter: i => i.text !== 'Upper' && i.text !== 'Lower'
+              }
+            },
+            tooltip: {
+              mode: 'index', intersect: false, callbacks: {
+                label: d =>
+                  d.dataset.label === 'Upper' || d.dataset.label === 'Lower' ? null : d.dataset.label + ': $' + d.raw + 'M'
+              }
+            }
+          },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 10 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' } }
+          }
+        }
+      });
+    }
+
+
+    function setSalesView(nWeeks) {
+      if (!_salesChart || !_salesFull) return;
+      _salesChart.resetZoom();
+      const total = _salesFull.labels.length;
+      const start = nWeeks === 0 ? 0 : Math.max(0, total - nWeeks);
+      _salesChart.data.labels           = _salesFull.labels.slice(start);
+      _salesChart.data.datasets[0].data = _salesFull.act.slice(start);
+      _salesChart.data.datasets[1].data = _salesFull.fc.slice(start);
+      _salesChart.data.datasets[2].data = _salesFull.hi.slice(start);
+      _salesChart.data.datasets[3].data = _salesFull.lo.slice(start);
+      _salesChart.update('none');
+      ['rb-4','rb-13','rb-26','rb-all'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+      });
+      const map = { 16:'rb-4', 25:'rb-13', 38:'rb-26', 0:'rb-all' };
+      const active = document.getElementById(map[nWeeks] || 'rb-all');
+      if (active) active.classList.add('active');
+    }
+
+    function resetSalesZoom() {
+      if (_salesChart) _salesChart.resetZoom();
+    }
+
+    // ── State donut ──
+    function buildStateChart() {
+      new Chart(document.getElementById('stateChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['CA', 'TX', 'WI'], datasets: [{
+            data: [DATA.ca_pct, DATA.tx_pct, DATA.wi_pct],
+            backgroundColor: [T, B, A], borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '62%'
+          }]
+        },
+        options: { ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.label + ': ' + d.raw + '%' } } } }
+      });
+    }
+
+    // ── Monthly growth sparkline ──
+    function buildGrowthChart() {
+      new Chart(document.getElementById('growthSparkChart'), {
+        type: 'line',
+        data: {
+          labels: DATA.monthly_labels, datasets: [{
+            data: DATA.monthly_growth,
+            borderColor: A, borderWidth: 1.5, fill: true, backgroundColor: A2 + '0.08)', pointRadius: 0, tension: .3
+          }]
+        },
+        options: {
+          ...DEF, scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxTicksLimit: 6 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => v + '%' } }
+          }
+        }
+      });
+    }
+
+    // ── Top 5 products ──
+    function buildTopProds() {
+      if (!DATA.top5 || !DATA.top5.length) { document.getElementById('topProds').textContent = 'No data'; return; }
+      const max = DATA.top5[0].rev;
+      document.getElementById('topProds').innerHTML = DATA.top5.map((p, i) => `
+  <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #253040;${i === DATA.top5.length - 1 ? 'border:none' : ''}">
+    <span style="font-size:11px;font-weight:600;color:#526070;width:18px">#${i + 1}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:500;color:#e8eef5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+      <div style="height:4px;background:#253040;border-radius:2px;margin-top:4px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(p.rev / max * 100)}%;background:${i === 0 ? T : B};border-radius:2px"></div>
+      </div>
+    </div>
+    <span style="font-size:12px;font-weight:600;color:#8fa3bc;white-space:nowrap">${fmtRev(p.rev)}</span>
+  </div>`).join('');
+    }
+
+    // ── Store/category dropdowns ──
+    function buildStoreDropdown() {
+      const storeEl = document.getElementById('fcStore');
+      const catEl = document.getElementById('fcCat');
+      storeEl.innerHTML = DATA.fc_stores.map(s => `<option value="${s}">${DATA.store_display[s] || s}</option>`).join('');
+      catEl.innerHTML = DATA.fc_cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    // ── Forecast drilldown chart ──
+    let fcChart = null;
+    function updateForecast() {
+      const store = document.getElementById('fcStore').value;
+      const cat = document.getElementById('fcCat').value;
+      const d = (DATA.fc_by_store_cat[store] || {})[cat];
+
+      if (!d || !d.qty || !d.qty.length) {
+        if (fcChart) { fcChart.destroy(); fcChart = null; }
+        set('fcAvg', '—'); set('fcPeak', '—'); set('fcRev', '—'); set('fcMae', '—');
+        return;
+      }
+
+      const qty = d.qty;
+      const avg = qty.reduce((s, v) => s + v, 0) / qty.length;
+      const barColors = qty.map(v => v >= avg ? T : B2 + '0.55)');
+
+      if (fcChart) fcChart.destroy();
+      fcChart = new Chart(document.getElementById('fcMainChart'), {
+        type: 'bar',
+        data: {
+          labels: d.labels, datasets: [
+            {
+              label: 'Forecast (units)',
+              data: qty,
+              backgroundColor: barColors,
+              borderRadius: 4,
+              order: 2
+            },
+            {
+              label: 'Upper bound (+15%)',
+              type: 'line',
+              data: qty.map(v => v * 1.15),
+              borderColor: 'rgba(0,196,160,0.4)',
+              borderWidth: 1.5,
+              borderDash: [5, 4],
+              pointRadius: 0,
+              fill: false,
+              order: 1
+            },
+            {
+              label: '12-wk average',
+              type: 'line',
+              data: Array(qty.length).fill(Math.round(avg)),
+              borderColor: 'rgba(245,166,35,0.7)',
+              borderWidth: 1.5,
+              borderDash: [8, 4],
+              pointRadius: 0,
+              fill: false,
+              order: 0
+            }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            ...DEF.plugins,
+            legend: {
+              display: true, position: 'top',
+              labels: {
+                color: '#8fa3bc', font: { size: 10 }, boxWidth: 12, padding: 14,
+                usePointStyle: true,
+                generateLabels: chart => [
+                  { text: 'Above avg week', fillStyle: T, strokeStyle: T, pointStyle: 'rect', fontColor: '#8fa3bc' },
+                  { text: 'Below avg week', fillStyle: 'rgba(74,158,255,0.55)', strokeStyle: 'rgba(74,158,255,0.55)', pointStyle: 'rect', fontColor: '#8fa3bc' },
+                  { text: 'Upper bound (+15%)', fillStyle: 'transparent', strokeStyle: 'rgba(0,196,160,0.4)', pointStyle: 'line', fontColor: '#8fa3bc', lineDash: [5, 4] },
+                  { text: '12-wk average', fillStyle: 'transparent', strokeStyle: 'rgba(245,166,35,0.7)', pointStyle: 'line', fontColor: '#8fa3bc', lineDash: [8, 4] }
+                ]
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              filter: item => item.dataset.label === 'Forecast (units)',
+              callbacks: {
+                title: ctx => ctx.length ? `${ctx[0].label} — Demand Forecast` : '',
+                label: ctx => {
+                  const v = Math.round(ctx.parsed.y);
+                  const pct = Math.round((v / avg - 1) * 100);
+                  const sign = pct >= 0 ? '+' : '';
+                  const tag = pct >= 0 ? '▲ above avg' : '▼ below avg';
+                  return [
+                    `  Forecast   : ${v.toLocaleString()} units`,
+                    `  vs. avg    : ${sign}${pct}% ${tag}`,
+                    `  Upper bound: ${Math.round(v * 1.15).toLocaleString()} units`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ...DEF.scales.x },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => v.toLocaleString() + ' u' } }
+          }
+        }
+      });
+
+      set('fcAvg', Math.round(qty.reduce((a, b) => a + b, 0) / qty.length));
+      set('fcPeak', 'W' + d.peak_wk);
+      set('fcRev', fmtRev(d.rev));
+      set('fcMae', d.mae + ' units');
+    }
+
+    // ── Monthly trend chart ──
+    function buildTrendChart() {
+      new Chart(document.getElementById('trendChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.monthly_labels, datasets: [
+            { type: 'bar', label: 'Revenue ($M)', data: DATA.monthly_values, backgroundColor: B2 + '0.5)', borderRadius: 3, yAxisID: 'y', order: 2 },
+            {
+              type: 'line', label: 'MoM Growth %', data: DATA.monthly_growth, borderColor: A, borderWidth: 2,
+              pointBackgroundColor: A, pointRadius: 3, yAxisID: 'y2', order: 1, tension: .3
+            }
+          ]
+        },
+        options: {
+          ...DEF,
+          plugins: {
+            ...DEF.plugins, legend: {
+              display: true, position: 'top',
+              labels: { color: '#8fa3bc', font: { size: 11 }, boxWidth: 10, padding: 12 }
+            }
+          },
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, maxRotation: 35, maxTicksLimit: 12 } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'M' }, title: { display: true, text: 'Revenue ($M)', color: '#526070', font: { size: 10 } } },
+            y2: {
+              position: 'right', grid: { display: false }, ticks: { color: '#f5a623', font: { size: 10 }, callback: v => v + '%' },
+              title: { display: true, text: 'MoM %', color: '#f5a623', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Inventory donut ──
+    function buildInvDonut() {
+      new Chart(document.getElementById('invDonutChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical', 'Warning', 'Safe'],
+          datasets: [{
+            data: [DATA.inv_crit, DATA.inv_warn, DATA.inv_safe], backgroundColor: [R, A, T],
+            borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '62%'
+          }]
+        },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: true, position: 'bottom', labels: { color: '#8fa3bc', font: { size: 11 }, padding: 12, boxWidth: 10 } },
+            tooltip: { callbacks: { label: d => d.label + ': ' + d.raw.toLocaleString() + ' items' } }
+          }
+        }
+      });
+    }
+
+    // ── Inventory critical items table ──
+    function buildInvTable() {
+      if (!DATA.inv_table || !DATA.inv_table.length) {
+        document.getElementById('invBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#526070;padding:20px">No critical items</td></tr>';
+        return;
+      }
+      document.getElementById('invBody').innerHTML = DATA.inv_table.map(r => `
+  <tr>
+    <td>${r.rank}</td>
+    <td class="em">${r.product}</td>
+    <td>${r.cat}</td>
+    <td>${r.store}</td>
+    <td><span class="pill ${r.weeks <= 1 ? 'pill-red' : 'pill-amber'}">${r.weeks} wks</span></td>
+    <td>${r.demand} units</td>
+    <td>${r.fc12} units</td>
+    <td><span class="pill ${r.priority === 'CRITICAL' ? 'pill-red' : 'pill-amber'}">${r.priority}</span></td>
+  </tr>`).join('');
+    }
+
+    // ── Category coverage bar chart ──
+    function buildCatCovChart() {
+      const palBg = [T2 + '0.7)', B2 + '0.7)', A2 + '0.7)'];
+      const palBd = [T, B, A];
+      new Chart(document.getElementById('catCovChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.inv_cat_labels,
+          datasets: [{
+            data: DATA.inv_cat_values,
+            backgroundColor: DATA.inv_cat_labels.map((_, i) => palBg[i % palBg.length]),
+            borderColor: DATA.inv_cat_labels.map((_, i) => palBd[i % palBd.length]),
+            borderRadius: 6, borderWidth: 1
+          }]
+        },
+        options: {
+          ...DEF, indexAxis: 'y',
+          plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.raw + ' weeks avg' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, callback: v => v + ' wks' } },
+            y: { ...DEF.scales.y }
+          }
+        }
+      });
+    }
+
+    // ── Store critical items bar chart ──
+    function buildStoreCritChart() {
+      const cols = DATA.inv_store_values.map(v => v > 5 ? R : v > 2 ? A : T2 + '0.5)');
+      new Chart(document.getElementById('storeCritChart'), {
+        type: 'bar',
+        data: {
+          labels: DATA.inv_store_labels,
+          datasets: [{ data: DATA.inv_store_values, backgroundColor: cols, borderRadius: 4 }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => d.raw + ' critical SKUs' } } },
+          scales: {
+            x: { ...DEF.scales.x },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, stepSize: 1 } }
+          }
+        }
+      });
+    }
+
+    // ── CLV vs Churn scatter ──
+    function buildClvScatter() {
+      const datasets = Object.entries(DATA.clv_scatter).map(([name, cfg]) => ({
+        label: name,
+        data: cfg.points,
+        backgroundColor: cfg.color + 'bb', pointRadius: 5, pointHoverRadius: 7
+      }));
+      new Chart(document.getElementById('clvChart'), {
+        type: 'scatter', data: { datasets },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: true, position: 'top', labels: { color: '#8fa3bc', font: { size: 10 }, boxWidth: 8, padding: 10 } },
+            tooltip: { callbacks: { label: d => [d.dataset.label, `Churn: ${Math.round(d.raw.x * 100)}%`, `CLV: $${d.raw.y.toLocaleString()}`] } }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,.04)' }, min: 0, max: 1,
+              title: { display: true, text: 'Churn probability (higher = more likely to leave)', color: '#526070', font: { size: 10 } },
+              ticks: { color: '#526070', font: { size: 9 }, callback: v => Math.round(v * 100) + '%' }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,.04)' }, min: 0,
+              title: { display: true, text: 'Projected 12-month CLV ($)', color: '#526070', font: { size: 10 } },
+              ticks: { color: '#526070', font: { size: 9 }, callback: v => '$' + v.toLocaleString() }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Segment donut ──
+    function buildSegDonut() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      new Chart(document.getElementById('segDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: DATA.seg_data.map(s => s.label),
+          datasets: [{
+            data: DATA.seg_data.map(s => s.count),
+            backgroundColor: DATA.seg_data.map((s, i) => SC[s.label] || def[i % def.length]),
+            borderWidth: 2, borderColor: '#151f2e', hoverOffset: 4, cutout: '58%'
+          }]
+        },
+        options: {
+          ...DEF, plugins: {
+            ...DEF.plugins,
+            legend: { display: false },
+            tooltip: { callbacks: { label: d => d.label + ': ' + d.raw.toLocaleString() } }
+          }
+        }
+      });
+    }
+
+    // ── Segment pills ──
+    function buildSegPills() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      const total = DATA.seg_data.reduce((a, s) => a + s.count, 0);
+      const max = DATA.seg_data[0] ? DATA.seg_data[0].count : 1;
+      document.getElementById('segPills').innerHTML = DATA.seg_data.slice(0, 5).map((s, i) => {
+        const c = SC[s.label] || def[i % def.length];
+        return `<div class="seg-pill">
+    <div class="seg-dot" style="background:${c}"></div>
+    <span class="seg-name">${s.label}</span>
+    <div class="seg-bar-wrap"><div class="seg-bar" style="width:${Math.round(s.count / max * 100)}%;background:${c}"></div></div>
+    <span class="seg-pct">${Math.round(s.count / total * 100)}%</span>
+    <span class="seg-rev">${fmtRev(s.revenue)}</span>
+  </div>`;
+      }).join('');
+    }
+
+    // ── Segment revenue bar chart ──
+    function buildSegRevChart() {
+      const SC = DATA.seg_colors || {};
+      const def = [T, B, P, A, '#5DCAA5', R, '#D4537E', G];
+      const top5 = DATA.seg_data.slice(0, 5);
+      new Chart(document.getElementById('segRevChart'), {
+        type: 'bar',
+        data: {
+          labels: top5.map(s => s.label),
+          datasets: [{
+            data: top5.map(s => Math.round(s.revenue / 1000)),
+            backgroundColor: top5.map((s, i) => (SC[s.label] || def[i % def.length]) + '99'),
+            borderColor: top5.map((s, i) => SC[s.label] || def[i % def.length]),
+            borderWidth: 1, borderRadius: 4
+          }]
+        },
+        options: {
+          ...DEF, plugins: { ...DEF.plugins, tooltip: { callbacks: { label: d => '$' + d.raw + 'K' } } },
+          scales: {
+            x: { ...DEF.scales.x, ticks: { ...DEF.scales.x.ticks, font: { size: 9 } } },
+            y: { ...DEF.scales.y, ticks: { ...DEF.scales.y.ticks, callback: v => '$' + v + 'K' } }
+          }
+        }
+      });
+    }
+
+    // ── Model validation table ──
+    function buildModelValidation() {
+      const m = DATA.model_metrics;
+      document.getElementById('valTableBody').innerHTML = `
+  <tr>
+    <td style="color:var(--text2)">Validation 2015</td>
+    <td class="good">${m.val.r2}</td><td>${m.val.mae}</td><td>${m.val.rmse}</td>
+    <td class="warn">${m.val.mape}%</td>
+  </tr>
+  <tr class="best">
+    <td><strong>Test 2016 ★</strong></td>
+    <td class="good">${m.test.r2}</td><td>${m.test.mae}</td><td>${m.test.rmse}</td>
+    <td class="warn">${m.test.mape}%</td>
+  </tr>`;
+    }
+
+    // ── SHAP feature importance list ──
+    function buildShapList() {
+      if (!DATA.shap_data || !DATA.shap_data.length) return;
+      const max = DATA.shap_data[0].value;
+      const featureColor = f => {
+        if (f.startsWith('lag_')) return B;
+        if (f.startsWith('rolling_')) return T;
+        if (f === 'snap' || f === 'has_event' || f === 'price_vs_median_ratio') return R;
+        return A;
+      };
+      document.getElementById('shapList').innerHTML = DATA.shap_data.map(f => `
+  <div class="shap-item">
+    <span class="shap-lbl">${f.feature}</span>
+    <div class="shap-track"><div class="shap-bar" style="width:${Math.round(f.value / max * 100)}%;background:${featureColor(f.feature)}"></div></div>
+    <span class="shap-num">${f.value.toFixed(2)}</span>
+  </div>`).join('');
+    }
+
+    // ── Bootstrap everything ──
+    function init() {
+      populateKPIs();
+      buildExecFcChart();
+      buildSalesChart();
+      buildStateChart();
+      buildGrowthChart();
+      buildTopProds();
+      buildStoreDropdown();
+      buildTrendChart();
+      buildInvDonut();
+      buildInvTable();
+      buildCatCovChart();
+      buildStoreCritChart();
+      buildClvScatter();
+      buildSegDonut();
+      buildSegPills();
+      buildSegRevChart();
+      buildModelValidation();
+      buildShapList();
+      updateForecast();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
