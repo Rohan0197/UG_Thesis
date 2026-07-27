@@ -16,6 +16,34 @@ from M5 are in USD; UCI customer CLV figures are in GBP.
 ## Project Structure
 
 ```
+Project/
+├── src/                          # all pipeline + dashboard code
+│   ├── data_builder.py
+│   ├── feature_engineering.py
+│   ├── model.py
+│   ├── customer_intelligence.py
+│   ├── generate_dashboard.py
+│   ├── dashboard_fixed.py
+│   └── dashboard_template.html
+├── raw_data/                     # empty in the repo — see "Data" below
+│   └── m5/
+├── processed_data/                # empty in the repo — populated by the pipeline
+├── models/                        # empty in the repo — populated by model.py
+├── retail_dashboard.html          # generated deliverable (already built, viewable as-is)
+├── requirements.txt
+└── README.md
+```
+
+## Data
+
+Raw and processed data (~1.5 GB total, including two >100 MB CSVs) are kept
+**outside this repository** in a sibling folder: `../Project_Data/`
+(`raw_data/`, `processed_data/`, `models/`). This keeps the git repo small;
+none of it is hand-authored — it's either source data or pipeline output.
+
+To run the pipeline, copy the contents back in first:
+
+```
 raw_data/
 ├── m5/                          # Walmart M5 competition data
 │   ├── sales_train_evaluation.csv
@@ -23,18 +51,18 @@ raw_data/
 │   └── calendar.csv
 ├── online_retail_II.xlsx        # UCI Online Retail 2009-2010
 └── Online Retail.xlsx           # UCI Online Retail 2010-2011
+```
 
-Pipeline (run in order):
-  Step 1: data_builder.py           → processed_data/{orders, line_items, products, stores}.csv
-  Step 2: feature_engineering.py    → processed_data/{weekly_features, inventory_base}.csv
-  Step 3: model.py                  → processed_data/{forecasts, feature_importance, model_metrics}.csv
+Pipeline (run in order, from the repo root):
+  Step 1: src/data_builder.py           → processed_data/{orders, line_items, products, stores}.csv
+  Step 2: src/feature_engineering.py    → processed_data/{weekly_features, inventory_base}.csv
+  Step 3: src/model.py                  → processed_data/{forecasts, feature_importance, model_metrics}.csv
                                       models/lgbm_demand.pkl
-  Step 4: customer_intelligence.py  → processed_data/{clv_scores, customer_summary, kmeans_diagnostics}.csv
-  Step 5: generate_dashboard.py     → retail_dashboard.html  (open in any browser)
+  Step 4: src/customer_intelligence.py  → processed_data/{clv_scores, customer_summary, kmeans_diagnostics}.csv
+  Step 5: src/generate_dashboard.py     → retail_dashboard.html  (open in any browser)
 
 Dashboard (alternative — requires Streamlit):
-  streamlit run dashboard_fixed.py
-```
+  streamlit run src/dashboard_fixed.py
 
 ## Quick Start
 
@@ -42,18 +70,20 @@ Dashboard (alternative — requires Streamlit):
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Run the pipeline (each step takes several minutes)
-python data_builder.py
-python feature_engineering.py
-python model.py
-python customer_intelligence.py
+# 2. Copy raw_data/, processed_data/, models/ in from ../Project_Data (see "Data" above)
 
-# 3a. Generate the standalone HTML dashboard (recommended)
-python generate_dashboard.py
+# 3. Run the pipeline (each step takes several minutes), from the repo root
+python src/data_builder.py
+python src/feature_engineering.py
+python src/model.py
+python src/customer_intelligence.py
+
+# 4a. Generate the standalone HTML dashboard (recommended)
+python src/generate_dashboard.py
 #     → Opens retail_dashboard.html in any browser, no server needed
 
-# 3b. OR launch the interactive Streamlit dashboard
-streamlit run dashboard_fixed.py
+# 4b. OR launch the interactive Streamlit dashboard
+streamlit run src/dashboard_fixed.py
 ```
 
 ## Dashboard
